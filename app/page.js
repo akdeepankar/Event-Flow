@@ -1,6 +1,7 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import { Suspense } from "react";
 import CreateEventCard from "./components/CreateEventCard";
 import EventList from "./components/EventList";
 import AnalyticsCard from "./components/AnalyticsCard";
@@ -31,7 +32,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <UserProfileSync />
+      <Suspense fallback={<div>Loading...</div>}>
+        <UserProfileSync />
+      </Suspense>
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -48,13 +51,19 @@ export default function Home() {
         {/* Dashboard Content */}
         <div className="grid gap-8 lg:grid-cols-3">
           <div>
-            <CreateEventCard />
+            <Suspense fallback={<div>Loading...</div>}>
+              <CreateEventCard />
+            </Suspense>
           </div>
           <div>
-            <EventList />
+            <Suspense fallback={<div>Loading...</div>}>
+              <EventList />
+            </Suspense>
           </div>
           <div>
-            <AnalyticsCard />
+            <Suspense fallback={<div>Loading...</div>}>
+              <AnalyticsCard />
+            </Suspense>
           </div>
         </div>
       </main>
