@@ -99,7 +99,7 @@ export default function EmailManager() {
         <div className="border border-gray-200 rounded-lg p-4">
           <h3 className="text-md font-medium text-gray-900 mb-2">Cancel Email</h3>
           <p className="text-sm text-gray-600 mb-3">
-            Cancel an email that hasn't been sent yet.
+            Cancel an email that hasn&apos;t been sent yet.
           </p>
           <div className="flex space-x-2">
             <input
