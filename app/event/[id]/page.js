@@ -29,8 +29,8 @@ export default function EventPage() {
     eventId: params.id
   }, event ? undefined : "skip");
 
-  // Show loading while checking authentication
-  if (!isLoaded) {
+  // Show loading while data is loading
+  if (!event && !isLoaded) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -108,9 +108,9 @@ export default function EventPage() {
               </div>
             </div>
 
-            {/* Action Buttons - Only show if user is authenticated */}
-            {user && (
-              <div className="flex space-x-3">
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              {user ? (
                 <button
                   onClick={() => setIsRegistrationModalOpen(true)}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
@@ -120,21 +120,31 @@ export default function EventPage() {
                   </svg>
                   <span>Register</span>
                 </button>
+              ) : (
                 <button
-                  onClick={() => {
-                    const link = `${window.location.origin}/event/${params.id}`;
-                    navigator.clipboard.writeText(link);
-                    setPopup({ isOpen: true, title: "Success", message: "Event link copied to clipboard!", type: "success", autoClose: true });
-                  }}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                  onClick={() => router.push("/sign-up")}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <span>Share</span>
+                  <span>Sign Up to Register</span>
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                onClick={() => {
+                  const link = `${window.location.origin}/event/${params.id}`;
+                  navigator.clipboard.writeText(link);
+                  setPopup({ isOpen: true, title: "Success", message: "Event link copied to clipboard!", type: "success", autoClose: true });
+                }}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                </svg>
+                <span>Share</span>
+              </button>
+            </div>
           </div>
 
           {/* Event Description */}
@@ -157,54 +167,21 @@ export default function EventPage() {
             </div>
           </div>
 
-          {/* Registration Count - Only show if user is authenticated */}
-          {user && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-center space-x-2">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-700">
-                  {registrationCount || 0} people registered
-                </span>
-              </div>
+          {/* Registration Count - Always visible */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="flex items-center space-x-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="text-sm font-medium text-gray-700">
+                {registrationCount || 0} people registered
+              </span>
             </div>
-          )}
-
-          {/* Sign Up CTA for non-authenticated users */}
-          {!user && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                <div className="text-center">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    Want to register for this event?
-                  </h2>
-                  <p className="text-gray-600 mb-6">
-                    Sign up or sign in to register for this event and get updates.
-                  </p>
-                  
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <button
-                      onClick={() => router.push("/sign-up")}
-                      className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                    >
-                      Create Account
-                    </button>
-                    <button
-                      onClick={() => router.push("/sign-in")}
-                      className="bg-white text-blue-600 px-6 py-3 rounded-lg border border-blue-600 hover:bg-blue-50 transition-colors font-medium"
-                    >
-                      Sign In
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
-        {/* Event Updates Section - Only show if user is authenticated */}
-        {user && updates && updates.length > 0 && (
+        {/* Event Updates Section - Always visible */}
+        {updates && updates.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Event Updates</h2>
             <div className="space-y-4">
