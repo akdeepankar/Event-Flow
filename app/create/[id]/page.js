@@ -6,7 +6,6 @@ import { useUser } from "@clerk/nextjs";
 import { useState, useRef, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
 import Navbar from "../../components/Navbar";
-import Image from "next/image";
 
 export default function EditEventPage() {
   const params = useParams();
@@ -282,11 +281,9 @@ export default function EditEventPage() {
                 
                 {imagePreview ? (
                   <div className="mb-3">
-                    <Image 
+                    <img 
                       src={imagePreview} 
                       alt="Preview" 
-                      width={800}
-                      height={300}
                       className="w-full rounded-lg border border-gray-200"
                       style={{ maxHeight: '300px', objectFit: 'cover' }}
                     />
