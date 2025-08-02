@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import Popup from "./Popup";
 
 export default function AnalyticsDetails({ events, registrations, selectedEvent, onEventSelect }) {
   // Get registrations for selected event
@@ -13,22 +15,77 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
 
   // Delete registration mutation
   const deleteRegistration = useMutation(api.registrations.deleteRegistration);
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
 
   // Handle delete registration
   const handleDeleteRegistration = async (registrationId, registrationName) => {
-    if (confirm(`Are you sure you want to remove ${registrationName} from the registration list?`)) {
-      try {
-        await deleteRegistration({ registrationId });
-        alert("Registration removed successfully!");
-      } catch (error) {
-        console.error("Error deleting registration:", error);
-        alert("Failed to remove registration. Please try again.");
-      }
+    setShowDeleteConfirm({ isOpen: true, registrationId, registrationName });
+  };
+
+  const confirmDeleteRegistration = async () => {
+    try {
+      await deleteRegistration({ registrationId: showDeleteConfirm.registrationId });
+      setPopup({ isOpen: true, title: "Success", message: "Registration removed successfully!", type: "success", autoClose: true });
+    } catch (error) {
+      console.error("Error deleting registration:", error);
+      setPopup({ isOpen: true, title: "Error", message: "Failed to remove registration. Please try again.", type: "error" });
     }
+    setShowDeleteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
+  };
+
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
+  };
+
+  const closeDeleteConfirm = () => {
+    setShowDeleteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
   };
 
   return (
     <div className="space-y-6">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
+      
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove Registration</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to remove <strong>{showDeleteConfirm.registrationName}</strong> from the registration list?
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeDeleteConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteRegistration}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Event Selection Dropdown */}
       <div className="mb-6">
         <label htmlFor="event-select" className="block text-sm font-medium text-gray-700 mb-2">

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
+import Popup from "./Popup";
 
 // Component to render event with header image
 function EventItem({ event, onDelete, onClick }) {
@@ -83,18 +85,31 @@ export default function EventList() {
   const userEmail = user?.emailAddresses[0]?.emailAddress || "";
   const events = useQuery(api.events.getMyEvents, { userEmail });
   const deleteEvent = useMutation(api.events.deleteEvent);
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState({ isOpen: false, eventId: null });
 
   const handleDelete = async (eventId, e) => {
     e.stopPropagation(); // Prevent event bubbling
-    if (confirm("Are you sure you want to delete this event?")) {
-      try {
-        await deleteEvent({ id: eventId, userEmail });
-        alert("Event deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        alert("Failed to delete event");
-      }
+    setShowDeleteConfirm({ isOpen: true, eventId });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteEvent({ id: showDeleteConfirm.eventId, userEmail });
+      setPopup({ isOpen: true, title: "Success", message: "Event deleted successfully!", type: "success", autoClose: true });
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      setPopup({ isOpen: true, title: "Error", message: "Failed to delete event", type: "error" });
     }
+    setShowDeleteConfirm({ isOpen: false, eventId: null });
+  };
+
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
+  };
+
+  const closeDeleteConfirm = () => {
+    setShowDeleteConfirm({ isOpen: false, eventId: null });
   };
 
   const handleEventClick = (eventId) => {
@@ -138,6 +153,48 @@ export default function EventList() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
+      
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Event</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this event? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeDeleteConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900">My Events</h2>
         <p className="text-sm text-gray-600 mt-1">Click any event to edit it</p>

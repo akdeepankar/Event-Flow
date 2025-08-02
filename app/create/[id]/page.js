@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { useState, useRef, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
 import Navbar from "../../components/Navbar";
+import Popup from "../../components/Popup";
 
 export default function EditEventPage() {
   const params = useParams();
@@ -14,6 +15,8 @@ export default function EditEventPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef(null);
   
      const event = useQuery(api.events.getEventById, { id: params.id });
@@ -65,7 +68,7 @@ export default function EditEventPage() {
     e.preventDefault();
     
     if (!editForm.title || !editForm.date) {
-      alert("Please fill in at least title and date");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in at least title and date", type: "warning" });
       return;
     }
 
@@ -77,27 +80,38 @@ export default function EditEventPage() {
         ...editForm
       });
       
-      alert("Event updated successfully!");
-      router.push(`/event/${params.id}`);
+      setPopup({ isOpen: true, title: "Success", message: "Event updated successfully!", type: "success", autoClose: true });
+      setTimeout(() => router.push(`/event/${params.id}`), 1500);
     } catch (error) {
       console.error("Error updating event:", error);
-      alert("Failed to update event");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to update event", type: "error" });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this event?")) {
-      try {
-        await deleteEvent({ id: params.id });
-        router.push("/");
-        alert("Event deleted successfully!");
-      } catch (error) {
-        console.error("Error deleting event:", error);
-        alert("Failed to delete event");
-      }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteEvent({ id: params.id });
+      setPopup({ isOpen: true, title: "Success", message: "Event deleted successfully!", type: "success", autoClose: true });
+      setTimeout(() => router.push("/"), 1500);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      setPopup({ isOpen: true, title: "Error", message: "Failed to delete event", type: "error" });
     }
+    setShowDeleteConfirm(false);
+  };
+
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
+  };
+
+  const closeDeleteConfirm = () => {
+    setShowDeleteConfirm(false);
   };
 
   const handleFileUpload = async (file) => {
@@ -105,13 +119,13 @@ export default function EditEventPage() {
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      setPopup({ isOpen: true, title: "Invalid File", message: "Please select an image file", type: "warning" });
       return;
     }
     
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      setPopup({ isOpen: true, title: "File Too Large", message: "File size must be less than 5MB", type: "warning" });
       return;
     }
 
@@ -152,7 +166,7 @@ export default function EditEventPage() {
       
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Failed to upload image");
+      setPopup({ isOpen: true, title: "Upload Error", message: "Failed to upload image", type: "error" });
     } finally {
       setUploadingImage(false);
     }
@@ -244,6 +258,48 @@ export default function EditEventPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
+      
+      {/* Delete Confirmation Popup */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Event</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this event? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeDeleteConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

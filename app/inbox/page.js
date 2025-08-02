@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
 import Navbar from "../components/Navbar";
+import Popup from "../components/Popup";
 
 export default function InboxPage() {
   const { user, isLoaded } = useUser();
@@ -25,6 +26,7 @@ export default function InboxPage() {
   const [isCreatingUpdate, setIsCreatingUpdate] = useState(false);
   const [isPublishingUpdate, setIsPublishingUpdate] = useState(false);
   const [selectedUpdate, setSelectedUpdate] = useState(null);
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   
   const events = useQuery(api.events.getAllEvents);
   const registrations = useQuery(api.registrations.getAllRegistrations);
@@ -111,17 +113,17 @@ export default function InboxPage() {
 
   const handleSendEmail = async () => {
     if (!selectedEvent || !emailSubject || !emailContent) {
-      alert("Please fill in all fields");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in all fields", type: "warning" });
       return;
     }
 
     if (sendMode === "selected" && selectedUsers.size === 0) {
-      alert("Please select at least one recipient");
+      setPopup({ isOpen: true, title: "No Recipients", message: "Please select at least one recipient", type: "warning" });
       return;
     }
 
     if (eventRegistrations.length === 0) {
-      alert("No registrations found for this event");
+      setPopup({ isOpen: true, title: "No Registrations", message: "No registrations found for this event", type: "warning" });
       return;
     }
 
@@ -133,7 +135,7 @@ export default function InboxPage() {
         subject: emailSubject,
         content: emailContent,
       });
-        alert(`Email sent successfully to ${eventRegistrations.length} recipients!`);
+        setPopup({ isOpen: true, title: "Success", message: `Email sent successfully to ${eventRegistrations.length} recipients!`, type: "success", autoClose: true });
       } else {
         await sendEmailToSelectedUsers({
           eventId: selectedEvent,
@@ -141,7 +143,7 @@ export default function InboxPage() {
           subject: emailSubject,
           content: emailContent,
         });
-        alert(`Email sent successfully to ${selectedUsers.size} selected recipients!`);
+        setPopup({ isOpen: true, title: "Success", message: `Email sent successfully to ${selectedUsers.size} selected recipients!`, type: "success", autoClose: true });
       }
       
       setEmailSubject("");
@@ -149,7 +151,7 @@ export default function InboxPage() {
       setSelectedUsers(new Set());
     } catch (error) {
       console.error("Error sending email:", error);
-      alert("Failed to send email. Please try again.");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to send email. Please try again.", type: "error" });
     } finally {
       setIsSending(false);
     }
@@ -157,12 +159,12 @@ export default function InboxPage() {
 
   const handleScheduleEmail = async () => {
     if (!selectedEvent || !emailSubject || !emailContent || !scheduledDateTime) {
-      alert("Please fill in all fields including scheduled date/time");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in all fields including scheduled date/time", type: "warning" });
       return;
     }
 
     if (sendMode === "selected" && selectedUsers.size === 0) {
-      alert("Please select at least one recipient");
+      setPopup({ isOpen: true, title: "No Recipients", message: "Please select at least one recipient", type: "warning" });
       return;
     }
 
@@ -184,7 +186,7 @@ export default function InboxPage() {
       
       const scheduledTime = new Date(scheduledDateTime).toLocaleString();
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      alert(`Email scheduled successfully for ${scheduledTime} (${timezone})`);
+      setPopup({ isOpen: true, title: "Success", message: `Email scheduled successfully for ${scheduledTime} (${timezone})`, type: "success", autoClose: true });
       setEmailSubject("");
       setEmailContent("");
       setScheduledDateTime("");
@@ -194,7 +196,7 @@ export default function InboxPage() {
       return true;
     } catch (error) {
       console.error("Error scheduling email:", error);
-      alert("Failed to schedule email. Please try again.");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to schedule email. Please try again.", type: "error" });
       return false;
     } finally {
       setIsScheduling(false);
@@ -205,10 +207,10 @@ export default function InboxPage() {
     if (confirm("Are you sure you want to cancel this scheduled email?")) {
       try {
         await cancelScheduledEmail({ emailId });
-        alert("Scheduled email cancelled successfully");
+        setPopup({ isOpen: true, title: "Success", message: "Scheduled email cancelled successfully", type: "success", autoClose: true });
       } catch (error) {
         console.error("Error cancelling email:", error);
-        alert("Failed to cancel email. Please try again.");
+        setPopup({ isOpen: true, title: "Error", message: "Failed to cancel email. Please try again.", type: "error" });
       }
     }
   };
@@ -216,7 +218,7 @@ export default function InboxPage() {
   // Update handling functions
   const handleCreateUpdate = async () => {
     if (!selectedEvent || !updateTitle || !updateContent) {
-      alert("Please fill in all fields");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in all fields", type: "warning" });
       return false;
     }
 
@@ -229,13 +231,13 @@ export default function InboxPage() {
         createdBy: user.id,
       });
       
-      alert("Update created successfully!");
+      setPopup({ isOpen: true, title: "Success", message: "Update created successfully!", type: "success", autoClose: true });
       setUpdateTitle("");
       setUpdateContent("");
       return true;
     } catch (error) {
       console.error("Error creating update:", error);
-      alert("Failed to create update. Please try again.");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to create update. Please try again.", type: "error" });
       return false;
     } finally {
       setIsCreatingUpdate(false);
@@ -247,10 +249,10 @@ export default function InboxPage() {
       setIsPublishingUpdate(true);
       try {
         await publishAndSendUpdate({ updateId });
-        alert("Update published and sent successfully!");
+        setPopup({ isOpen: true, title: "Success", message: "Update published and sent successfully!", type: "success", autoClose: true });
       } catch (error) {
         console.error("Error publishing update:", error);
-        alert("Failed to publish update. Please try again.");
+        setPopup({ isOpen: true, title: "Error", message: "Failed to publish update. Please try again.", type: "error" });
       } finally {
         setIsPublishingUpdate(false);
       }
@@ -261,10 +263,10 @@ export default function InboxPage() {
     if (confirm("Are you sure you want to delete this update?")) {
       try {
         await deleteUpdate({ updateId });
-        alert("Update deleted successfully!");
+        setPopup({ isOpen: true, title: "Success", message: "Update deleted successfully!", type: "success", autoClose: true });
       } catch (error) {
         console.error("Error deleting update:", error);
-        alert("Failed to delete update. Please try again.");
+        setPopup({ isOpen: true, title: "Error", message: "Failed to delete update. Please try again.", type: "error" });
       }
     }
   };
@@ -277,7 +279,7 @@ export default function InboxPage() {
 
   const handleSaveEdit = async () => {
     if (!selectedUpdate || !updateTitle || !updateContent) {
-      alert("Please fill in all fields");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in all fields", type: "warning" });
       return;
     }
 
@@ -288,13 +290,13 @@ export default function InboxPage() {
         content: updateContent,
       });
       
-      alert("Update saved successfully!");
+      setPopup({ isOpen: true, title: "Success", message: "Update saved successfully!", type: "success", autoClose: true });
       setSelectedUpdate(null);
       setUpdateTitle("");
       setUpdateContent("");
     } catch (error) {
       console.error("Error saving update:", error);
-      alert("Failed to save update. Please try again.");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to save update. Please try again.", type: "error" });
     }
   };
 
@@ -314,6 +316,10 @@ export default function InboxPage() {
     }
   };
 
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
+  };
+
   const tabs = [
     { id: "schedule", name: "Schedule", icon: "📅" },
     { id: "updates", name: "Updates", icon: "📢" },
@@ -321,6 +327,15 @@ export default function InboxPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
       <Navbar />
       
       <div className="pt-16">

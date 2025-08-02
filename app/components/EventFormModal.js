@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
+import Popup from "./Popup";
 
 export default function EventFormModal({ isOpen, onClose }) {
   const [title, setTitle] = useState("");
@@ -14,6 +15,7 @@ export default function EventFormModal({ isOpen, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const fileInputRef = useRef(null);
   
   const { user } = useUser();
@@ -25,12 +27,12 @@ export default function EventFormModal({ isOpen, onClose }) {
     e.preventDefault();
     
     if (!title || !date) {
-      alert("Please fill in at least title and date");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in at least title and date", type: "warning" });
       return;
     }
 
     if (!user) {
-      alert("Please sign in to create events");
+      setPopup({ isOpen: true, title: "Authentication Required", message: "Please sign in to create events", type: "warning" });
       return;
     }
 
@@ -46,24 +48,24 @@ export default function EventFormModal({ isOpen, onClose }) {
         userEmail: user.emailAddresses[0]?.emailAddress || "",
       });
       
-                   // Reset form
-             setTitle("");
-             setDescription("");
-             setDate("");
-             setLocation("");
-             setHeaderImage("");
-             setImagePreview("");
-             if (fileInputRef.current) {
-               fileInputRef.current.value = "";
-             }
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setDate("");
+      setLocation("");
+      setHeaderImage("");
+      setImagePreview("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       
       // Close modal
       onClose();
       
-      alert("Event created successfully!");
+      setPopup({ isOpen: true, title: "Success", message: "Event created successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error creating event:", error);
-      alert("Failed to create event");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to create event", type: "error" });
     } finally {
       setIsSubmitting(false);
     }
@@ -75,18 +77,22 @@ export default function EventFormModal({ isOpen, onClose }) {
     }
   };
 
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
+  };
+
   const handleFileUpload = async (file) => {
     if (!file) return;
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      setPopup({ isOpen: true, title: "Invalid File", message: "Please select an image file", type: "warning" });
       return;
     }
     
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
+      setPopup({ isOpen: true, title: "File Too Large", message: "File size must be less than 5MB", type: "warning" });
       return;
     }
 
@@ -127,7 +133,7 @@ export default function EventFormModal({ isOpen, onClose }) {
       
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("Failed to upload image");
+      setPopup({ isOpen: true, title: "Upload Error", message: "Failed to upload image", type: "error" });
     } finally {
       setUploadingImage(false);
     }
@@ -152,6 +158,16 @@ export default function EventFormModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-50 p-4">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
+      
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">

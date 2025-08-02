@@ -7,12 +7,14 @@ import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Navbar from "../../components/Navbar";
 import RegistrationModal from "../../components/RegistrationModal";
+import Popup from "../../components/Popup";
 
 export default function EventPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   
   const event = useQuery(api.events.getEventById, { id: params.id });
   const headerImageUrl = useQuery(api.files.getFileUrl, { 
@@ -57,6 +59,15 @@ export default function EventPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={() => setPopup({ isOpen: false, title: "", message: "", type: "info" })}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Event Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
@@ -113,7 +124,7 @@ export default function EventPage() {
                   onClick={() => {
                     const link = `${window.location.origin}/event/${params.id}`;
                     navigator.clipboard.writeText(link);
-                    alert("Event link copied to clipboard!");
+                    setPopup({ isOpen: true, title: "Success", message: "Event link copied to clipboard!", type: "success", autoClose: true });
                   }}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
                 >

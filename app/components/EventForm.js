@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
+import Popup from "./Popup";
 
 export default function EventForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   
   const { user } = useUser();
   const createEvent = useMutation(api.events.createEvent);
@@ -18,12 +20,12 @@ export default function EventForm() {
     e.preventDefault();
     
     if (!title || !date) {
-      alert("Please fill in at least title and date");
+      setPopup({ isOpen: true, title: "Required Fields", message: "Please fill in at least title and date", type: "warning" });
       return;
     }
 
     if (!user) {
-      alert("Please sign in to create events");
+      setPopup({ isOpen: true, title: "Authentication Required", message: "Please sign in to create events", type: "warning" });
       return;
     }
 
@@ -42,15 +44,28 @@ export default function EventForm() {
       setDate("");
       setLocation("");
       
-      alert("Event created successfully!");
+      setPopup({ isOpen: true, title: "Success", message: "Event created successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error creating event:", error);
-      alert("Failed to create event");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to create event", type: "error" });
     }
+  };
+
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
   };
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Create Event</h2>
         <p className="text-sm text-gray-600 mt-1">Add a new event to your calendar</p>

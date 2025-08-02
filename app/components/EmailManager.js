@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import Popup from "./Popup";
 
 export default function EmailManager() {
   const [emailId, setEmailId] = useState("");
   const [emailStatus, setEmailStatus] = useState(null);
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   
   const sendTestEmail = useMutation(api.emails.sendTestEmail);
   const getEmailStatus = useQuery(api.emails.getEmailStatus, emailId ? { emailId } : "skip");
@@ -15,16 +17,16 @@ export default function EmailManager() {
   const handleSendTestEmail = async () => {
     try {
       await sendTestEmail();
-      alert("Test email sent successfully!");
+      setPopup({ isOpen: true, title: "Success", message: "Test email sent successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error sending test email:", error);
-      alert("Failed to send test email");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to send test email", type: "error" });
     }
   };
 
   const handleCheckStatus = async () => {
     if (!emailId) {
-      alert("Please enter an email ID");
+      setPopup({ isOpen: true, title: "Required Field", message: "Please enter an email ID", type: "warning" });
       return;
     }
     setEmailStatus(getEmailStatus);
@@ -32,20 +34,33 @@ export default function EmailManager() {
 
   const handleCancelEmail = async () => {
     if (!emailId) {
-      alert("Please enter an email ID");
+      setPopup({ isOpen: true, title: "Required Field", message: "Please enter an email ID", type: "warning" });
       return;
     }
     try {
       await cancelEmail({ emailId });
-      alert("Email cancelled successfully!");
+      setPopup({ isOpen: true, title: "Success", message: "Email cancelled successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error cancelling email:", error);
-      alert("Failed to cancel email");
+      setPopup({ isOpen: true, title: "Error", message: "Failed to cancel email", type: "error" });
     }
+  };
+
+  const closePopup = () => {
+    setPopup({ isOpen: false, title: "", message: "", type: "info" });
   };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
+      {/* Popup Component */}
+      <Popup
+        isOpen={popup.isOpen}
+        onClose={closePopup}
+        title={popup.title}
+        message={popup.message}
+        type={popup.type}
+        autoClose={popup.autoClose}
+      />
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Email Management</h2>
       
       <div className="space-y-4">
