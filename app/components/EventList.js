@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
+import Image from "next/image";
 
 // Component to render event with header image
 function EventItem({ event, onDelete, onClick }) {
@@ -18,9 +19,11 @@ function EventItem({ event, onDelete, onClick }) {
     >
       {event.headerImage && headerImageUrl && (
         <div className="mb-3">
-          <img 
+          <Image 
             src={headerImageUrl}
             alt={event.title}
+            width={400}
+            height={120}
             className="w-full rounded-lg"
             style={{ maxHeight: '120px', objectFit: 'cover' }}
             onError={(e) => {

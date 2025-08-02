@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Navbar from "../../components/Navbar";
 import RegistrationModal from "../../components/RegistrationModal";
+import Image from "next/image";
 
 export default function EventPage() {
   const params = useParams();
@@ -84,7 +85,7 @@ export default function EventPage() {
           {!event ? (
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Event not found</h1>
-              <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been deleted.</p>
+              <p className="text-gray-600 mb-6">The event you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
               <button
                 onClick={() => router.push("/")}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -98,9 +99,11 @@ export default function EventPage() {
                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
                  {headerImageUrl && (
                    <div className="mb-6">
-                     <img 
+                     <Image 
                        src={headerImageUrl} 
                        alt={event.title}
+                       width={800}
+                       height={400}
                        className="w-full rounded-lg"
                        style={{ maxHeight: '400px', objectFit: 'cover' }}
                        onError={(e) => {
@@ -212,7 +215,7 @@ export default function EventPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Event not found</h1>
-            <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been deleted.</p>
+            <p className="text-gray-600 mb-6">The event you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
             <button
               onClick={() => router.push("/")}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -232,9 +235,11 @@ export default function EventPage() {
          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
            {headerImageUrl && (
              <div className="mb-6">
-               <img 
+               <Image 
                  src={headerImageUrl} 
                  alt={event.title}
+                 width={800}
+                 height={400}
                  className="w-full rounded-lg"
                  style={{ maxHeight: '400px', objectFit: 'cover' }}
                  onError={(e) => {

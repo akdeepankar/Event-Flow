@@ -616,7 +616,7 @@ function UpdatesTab({
                 </svg>
               </div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">No Updates Yet</h4>
-              <p className="text-gray-500 mb-6">You haven't created any updates yet</p>
+              <p className="text-gray-500 mb-6">You haven&apos;t created any updates yet</p>
           <button
                 onClick={() => setShowUpdateModal(true)}
                 className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
@@ -945,7 +945,7 @@ function ScheduleTab({
                 </svg>
               </div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">No Scheduled Emails</h4>
-              <p className="text-gray-500 mb-6">You haven't scheduled any emails yet</p>
+              <p className="text-gray-500 mb-6">You haven&apos;t scheduled any emails yet</p>
               <button
                 onClick={() => setShowScheduleModal(true)}
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"

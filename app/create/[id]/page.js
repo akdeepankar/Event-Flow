@@ -6,6 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { useState, useRef, useEffect } from "react";
 import { api } from "../../../convex/_generated/api";
 import Navbar from "../../components/Navbar";
+import Image from "next/image";
 
 export default function EditEventPage() {
   const params = useParams();
@@ -207,7 +208,7 @@ export default function EditEventPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Event not found</h1>
-            <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been deleted.</p>
+            <p className="text-gray-600 mb-6">The event you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
             <button
               onClick={() => router.push("/")}
               className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -281,9 +282,11 @@ export default function EditEventPage() {
                 
                 {imagePreview ? (
                   <div className="mb-3">
-                    <img 
+                    <Image 
                       src={imagePreview} 
                       alt="Preview" 
+                      width={800}
+                      height={300}
                       className="w-full rounded-lg border border-gray-200"
                       style={{ maxHeight: '300px', objectFit: 'cover' }}
                     />

@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import { useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
+import Image from "next/image";
 
 export default function EventFormModal({ isOpen, onClose }) {
   const [title, setTitle] = useState("");
@@ -177,11 +178,13 @@ export default function EventFormModal({ isOpen, onClose }) {
               
               {imagePreview ? (
                 <div className="mb-3">
-                  <img 
+                  <Image 
                     src={imagePreview} 
                     alt="Preview" 
+                    width={800}
+                    height={300}
                     className="w-full rounded-lg border border-gray-200"
-                                           style={{ maxHeight: '300px', objectFit: 'cover' }}
+                    style={{ maxHeight: '300px', objectFit: 'cover' }}
                   />
                   <button
                     type="button"
