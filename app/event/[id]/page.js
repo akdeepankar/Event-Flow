@@ -222,4 +222,4 @@ export default function EventPage() {
       )}
     </div>
   );
- 
+}
