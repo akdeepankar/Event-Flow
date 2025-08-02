@@ -8,6 +8,8 @@ export default defineSchema({
     date: v.string(),
     location: v.optional(v.string()),
     headerImage: v.optional(v.string()),
+    participantLimit: v.optional(v.number()), // Maximum number of participants
+    registrationClosed: v.optional(v.boolean()), // Whether registration is closed
     createdBy: v.string(), // Clerk user ID
     createdAt: v.number(),
     updatedAt: v.number(),
@@ -33,8 +35,10 @@ export default defineSchema({
     eventId: v.id("events"),
     name: v.string(),
     email: v.string(),
+    status: v.union(v.literal("registered"), v.literal("waitlisted"), v.literal("cancelled")),
+    waitlistPosition: v.optional(v.number()), // Position in waitlist (1-based)
     registeredAt: v.number(),
-  }).index("by_eventId", ["eventId"]),
+  }).index("by_eventId", ["eventId"]).index("by_eventId_status", ["eventId", "status"]),
 
   scheduledEmails: defineTable({
     eventId: v.id("events"),

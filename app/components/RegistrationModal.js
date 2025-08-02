@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Popup from "./Popup";
 
-export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle }) {
+export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle, isEventFull = false }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,7 +16,7 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
   const registerForEvent = useMutation(api.registrations.registerForEvent);
   
   // Check if user is already registered when email changes
-  const isAlreadyRegistered = useQuery(
+  const registrationStatus = useQuery(
     api.registrations.isRegisteredForEvent,
     email && eventId ? { eventId, email } : "skip"
   );
@@ -57,7 +57,7 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
     }
 
     // Check if already registered before submitting
-    if (isAlreadyRegistered) {
+    if (registrationStatus?.isRegistered) {
       setShowAlreadyRegistered(true);
       return;
     }
@@ -65,7 +65,7 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
     setIsSubmitting(true);
 
     try {
-      await registerForEvent({
+      const result = await registerForEvent({
         eventId,
         name: name.trim(),
         email: email.trim(),
@@ -76,7 +76,11 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
       setEmailError("");
       onClose();
       
-      setPopup({ isOpen: true, title: "Success", message: "Successfully registered for the event!", type: "success", autoClose: true });
+      const message = result.status === "waitlisted" 
+        ? `Successfully added to waitlist! You are #${result.waitlistPosition} in line.`
+        : "Successfully registered for the event!";
+      
+      setPopup({ isOpen: true, title: "Success", message: message, type: "success", autoClose: true });
     } catch (error) {
       console.error("Error registering for event:", error);
       if (error.message === "Already registered for this event") {
@@ -119,7 +123,7 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
       
       {/* Already Registered Popup */}
       {showAlreadyRegistered && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -146,8 +150,18 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Register for Event</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {isEventFull ? "Get Waitlisted" : "Register for Event"}
+            </h2>
             <p className="text-sm text-gray-600 mt-1">{eventTitle}</p>
+            {isEventFull && (
+              <p className="text-sm text-yellow-600 mt-1 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Event is full. You&apos;ll be notified when a spot opens up.
+              </p>
+            )}
           </div>
           <button
             onClick={handleClose}
@@ -186,7 +200,7 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
               value={email}
               onChange={handleEmailChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                emailError ? 'border-red-300' : isAlreadyRegistered ? 'border-yellow-300' : 'border-gray-300'
+                emailError ? 'border-red-300' : registrationStatus?.isRegistered ? 'border-yellow-300' : 'border-gray-300'
               }`}
               placeholder="Enter your email address"
               required
@@ -195,12 +209,15 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
             {emailError && (
               <p className="text-red-600 text-sm mt-1">{emailError}</p>
             )}
-            {isAlreadyRegistered && email && !emailError && (
+            {registrationStatus?.isRegistered && email && !emailError && (
               <p className="text-yellow-600 text-sm mt-1 flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
-                Already registered for this event
+                {registrationStatus.status === "waitlisted" 
+                  ? `Already on waitlist (#${registrationStatus.waitlistPosition})`
+                  : "Already registered for this event"
+                }
               </p>
             )}
           </div>
@@ -217,10 +234,21 @@ export default function RegistrationModal({ isOpen, onClose, eventId, eventTitle
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !!emailError || isAlreadyRegistered}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50"
+              disabled={isSubmitting || !!emailError || registrationStatus?.isRegistered}
+              className={`flex-1 text-white py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 ${
+                isEventFull 
+                  ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500' 
+                  : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+              }`}
             >
-              {isSubmitting ? "Registering..." : isAlreadyRegistered ? "Already Registered" : "Register"}
+              {isSubmitting 
+                ? (isEventFull ? "Adding to Waitlist..." : "Registering...") 
+                : registrationStatus?.isRegistered 
+                ? "Already Registered" 
+                : isEventFull 
+                ? "Get Waitlisted" 
+                : "Register"
+              }
             </button>
           </div>
         </form>

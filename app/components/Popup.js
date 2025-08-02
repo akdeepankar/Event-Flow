@@ -10,7 +10,8 @@ export default function Popup({
   type = "info", // "info", "success", "warning", "error"
   showCloseButton = true,
   autoClose = false,
-  autoCloseDelay = 3000
+  autoCloseDelay = 3000,
+  eventUrl = ""
 }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -33,6 +34,16 @@ export default function Popup({
     setTimeout(() => {
       onClose();
     }, 200); // Allow time for fade out animation
+  };
+
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(eventUrl);
+      // You could add a toast notification here if you want
+      console.log('Event URL copied to clipboard:', eventUrl);
+    } catch (err) {
+      console.error('Failed to copy URL:', err);
+    }
   };
 
   const getTypeStyles = () => {
@@ -89,7 +100,7 @@ export default function Popup({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+            <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
       <div 
         className={`bg-white rounded-2xl shadow-xl max-w-md w-full p-6 transform transition-all duration-200 ${
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
@@ -100,7 +111,30 @@ export default function Popup({
             {typeStyles.icon}
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-          <p className="text-gray-600 mb-6 whitespace-pre-wrap">{message}</p>
+          <p className="text-gray-600 mb-4 whitespace-pre-wrap">{message}</p>
+          
+          {eventUrl && (
+            <div className="mb-6">
+              <div className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  type="text"
+                  value={eventUrl}
+                  readOnly
+                  className="flex-1 text-sm text-gray-600 bg-transparent border-none outline-none"
+                />
+                <button
+                  onClick={handleCopyUrl}
+                  className="text-blue-600 hover:text-blue-700 transition-colors p-1"
+                  title="Copy link"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+          
           {showCloseButton && (
             <button
               onClick={handleClose}

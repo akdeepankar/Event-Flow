@@ -11,6 +11,7 @@ export default function EventFormModal({ isOpen, onClose }) {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
+  const [participantLimit, setParticipantLimit] = useState("");
   const [headerImage, setHeaderImage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -44,6 +45,7 @@ export default function EventFormModal({ isOpen, onClose }) {
         description,
         date,
         location,
+        participantLimit: participantLimit ? parseInt(participantLimit) : null,
         headerImage,
         userEmail: user.emailAddresses[0]?.emailAddress || "",
       });
@@ -53,6 +55,7 @@ export default function EventFormModal({ isOpen, onClose }) {
       setDescription("");
       setDate("");
       setLocation("");
+      setParticipantLimit("");
       setHeaderImage("");
       setImagePreview("");
       if (fileInputRef.current) {
@@ -290,6 +293,24 @@ export default function EventFormModal({ isOpen, onClose }) {
                 disabled={isSubmitting}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Participant Limit (Optional)
+            </label>
+            <input
+              type="number"
+              value={participantLimit}
+              onChange={(e) => setParticipantLimit(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter maximum number of participants"
+              min="1"
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty for unlimited participants
+            </p>
           </div>
 
                      

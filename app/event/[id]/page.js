@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
@@ -15,19 +15,32 @@ export default function EventPage() {
   const { user, isLoaded } = useUser();
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
+
   
   const event = useQuery(api.events.getEventById, { id: params.id });
   const headerImageUrl = useQuery(api.files.getFileUrl, { 
     storageId: event?.headerImage || "" 
   }, event?.headerImage ? undefined : "skip");
+
   const registrationCount = useQuery(api.registrations.getEventRegistrationCount, {
     eventId: params.id
   }, event ? undefined : "skip");
+  
+  // Check if current user is registered for this event
+  const userRegistration = useQuery(
+    api.registrations.isRegisteredForEvent,
+    user?.emailAddresses[0]?.emailAddress && event ? { 
+      eventId: params.id, 
+      email: user.emailAddresses[0].emailAddress 
+    } : "skip"
+  );
   
   // Get updates for this event
   const updates = useQuery(api.updates.getUpdatesForEvent, {
     eventId: params.id
   }, event ? undefined : "skip");
+
+
 
   // Show loading while data is loading
   if (!event && !isLoaded) {
@@ -68,6 +81,8 @@ export default function EventPage() {
         type={popup.type}
         autoClose={popup.autoClose}
       />
+
+
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Event Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
@@ -111,25 +126,61 @@ export default function EventPage() {
             {/* Action Buttons */}
             <div className="flex space-x-3">
               {user ? (
-                <button
-                  onClick={() => setIsRegistrationModalOpen(true)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span>Register</span>
-                </button>
+                event.registrationClosed ? (
+                  <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 flex items-center space-x-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Registration Closed</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsRegistrationModalOpen(true)}
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                      event.participantLimit && registrationCount?.registered >= event.participantLimit
+                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>
+                      {event.participantLimit && registrationCount?.registered >= event.participantLimit
+                        ? 'Get Waitlisted'
+                        : 'Register'
+                      }
+                    </span>
+                  </button>
+                )
               ) : (
-                <button
-                  onClick={() => router.push("/sign-up")}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  <span>Sign Up to Register</span>
-                </button>
+                event.registrationClosed ? (
+                  <div className="px-4 py-2 rounded-lg bg-red-100 text-red-700 flex items-center space-x-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span>Registration Closed</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => router.push("/sign-up")}
+                    className={`px-4 py-2 rounded-lg transition-colors flex items-center space-x-2 ${
+                      event.participantLimit && registrationCount?.registered >= event.participantLimit
+                        ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                        : 'bg-green-600 hover:bg-green-700 text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>
+                      {event.participantLimit && registrationCount?.registered >= event.participantLimit
+                        ? 'Sign Up to Get Waitlisted'
+                        : 'Sign Up to Register'
+                      }
+                    </span>
+                  </button>
+                )
               )}
               <button
                 onClick={() => {
@@ -169,13 +220,52 @@ export default function EventPage() {
 
           {/* Registration Count - Always visible */}
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center space-x-2">
-              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-700">
-                {registrationCount || 0} people registered
-              </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span className="text-sm font-medium text-gray-700">
+                    {registrationCount?.registered || 0} people registered
+                  </span>
+                </div>
+                {registrationCount?.waitlisted > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700">
+                      {registrationCount.waitlisted} on waitlist
+                    </span>
+                  </div>
+                )}
+                {event.participantLimit && (
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm font-medium text-gray-700">
+                      Limit: {event.participantLimit}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* User Registration Status */}
+              {user && userRegistration?.isRegistered && (
+                <div className="flex items-center space-x-3">
+                  {userRegistration.status === "waitlisted" && (
+                    <div className="flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>You&apos;re #{userRegistration.waitlistPosition} in line</span>
+                    </div>
+                  )}
+
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -206,6 +296,7 @@ export default function EventPage() {
           onClose={() => setIsRegistrationModalOpen(false)}
           eventId={params.id}
           eventTitle={event.title}
+          isEventFull={event.participantLimit && registrationCount?.registered >= event.participantLimit}
         />
       )}
     </div>

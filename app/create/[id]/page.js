@@ -15,7 +15,7 @@ export default function EditEventPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
-  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info", eventUrl: "" });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef(null);
   
@@ -34,6 +34,7 @@ export default function EditEventPage() {
     description: "",
     date: "",
     location: "",
+    participantLimit: "",
     headerImage: ""
   });
 
@@ -45,6 +46,7 @@ export default function EditEventPage() {
         description: event.description || "",
         date: event.date || "",
         location: event.location || "",
+        participantLimit: event.participantLimit ? event.participantLimit.toString() : "",
         headerImage: event.headerImage || ""
       });
     }
@@ -75,13 +77,32 @@ export default function EditEventPage() {
     setIsSubmitting(true);
 
     try {
-      await updateEvent({
+      const updateData = {
         id: params.id,
-        ...editForm
-      });
+        title: editForm.title,
+        description: editForm.description,
+        date: editForm.date,
+        location: editForm.location,
+        headerImage: editForm.headerImage,
+        userEmail: user.emailAddresses[0]?.emailAddress || "",
+      };
+
+      // Only include participantLimit if it has a value
+      if (editForm.participantLimit && editForm.participantLimit.trim() !== "") {
+        updateData.participantLimit = parseInt(editForm.participantLimit);
+      }
+
+      await updateEvent(updateData);
       
-      setPopup({ isOpen: true, title: "Success", message: "Event updated successfully!", type: "success", autoClose: true });
-      setTimeout(() => router.push(`/event/${params.id}`), 1500);
+      const eventUrl = `${window.location.origin}/event/${params.id}`;
+      setPopup({ 
+        isOpen: true, 
+        title: "Event Updated Successfully!", 
+        message: "Your event has been updated. Share the link below with others:", 
+        type: "success", 
+        eventUrl: eventUrl,
+        autoClose: false 
+      });
     } catch (error) {
       console.error("Error updating event:", error);
       setPopup({ isOpen: true, title: "Error", message: "Failed to update event", type: "error" });
@@ -96,7 +117,7 @@ export default function EditEventPage() {
 
   const confirmDelete = async () => {
     try {
-      await deleteEvent({ id: params.id });
+      await deleteEvent({ id: params.id, userEmail: user.emailAddresses[0]?.emailAddress || "" });
       setPopup({ isOpen: true, title: "Success", message: "Event deleted successfully!", type: "success", autoClose: true });
       setTimeout(() => router.push("/"), 1500);
     } catch (error) {
@@ -107,7 +128,7 @@ export default function EditEventPage() {
   };
 
   const closePopup = () => {
-    setPopup({ isOpen: false, title: "", message: "", type: "info" });
+    setPopup({ isOpen: false, title: "", message: "", type: "info", eventUrl: "" });
   };
 
   const closeDeleteConfirm = () => {
@@ -259,18 +280,19 @@ export default function EditEventPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Popup Component */}
-      <Popup
-        isOpen={popup.isOpen}
-        onClose={closePopup}
-        title={popup.title}
-        message={popup.message}
-        type={popup.type}
-        autoClose={popup.autoClose}
-      />
+             <Popup
+         isOpen={popup.isOpen}
+         onClose={closePopup}
+         title={popup.title}
+         message={popup.message}
+         type={popup.type}
+         autoClose={popup.autoClose}
+         eventUrl={popup.eventUrl}
+       />
       
       {/* Delete Confirmation Popup */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60 p-4">
+        <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -302,7 +324,7 @@ export default function EditEventPage() {
       )}
       <Navbar />
       
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-8">
         {/* Edit Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
           <div className="flex justify-between items-center mb-6">
@@ -440,6 +462,24 @@ export default function EditEventPage() {
                   disabled={isSubmitting}
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Participant Limit (Optional)
+              </label>
+              <input
+                type="number"
+                value={editForm.participantLimit}
+                onChange={(e) => setEditForm({ ...editForm, participantLimit: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                placeholder="Enter maximum number of participants"
+                min="1"
+                disabled={isSubmitting}
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Leave empty for unlimited participants
+              </p>
             </div>
 
                          

@@ -226,6 +226,8 @@ export const sendRegistrationEmail = mutation({
     registrationId: v.id("registrations"),
     to: v.string(),
     name: v.string(),
+    status: v.optional(v.string()),
+    waitlistPosition: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Get event details
@@ -240,29 +242,37 @@ export const sendRegistrationEmail = mutation({
       throw new Error("Registration not found");
     }
 
+    const isWaitlisted = args.status === "waitlisted";
+    const subject = isWaitlisted ? `Waitlisted: ${event.title}` : `Registration Confirmed: ${event.title}`;
+    const title = isWaitlisted ? "You're on the Waitlist!" : "Registration Confirmed!";
+    const message = isWaitlisted 
+      ? `Your registration for <strong>${event.title}</strong> has been added to the waitlist. You are currently #${args.waitlistPosition} in line.`
+      : `Your registration for <strong>${event.title}</strong> has been confirmed!`;
+
     const emailId = await resend.sendEmail(ctx, {
       from: `Event Flow <${SENDER_EMAIL}>`,
       to: args.to,
-      subject: `Registration Confirmed: ${event.title}`,
+      subject: subject,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">Registration Confirmed!</h1>
+          <div style="background: linear-gradient(135deg, ${isWaitlisted ? '#ff6b6b' : '#667eea'} 0%, ${isWaitlisted ? '#ee5a24' : '#764ba2'} 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">${title}</h1>
           </div>
           
           <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
             <h2 style="color: #333; margin-top: 0;">Hello ${args.name},</h2>
             
-            <p style="color: #666; line-height: 1.6;">Your registration for <strong>${event.title}</strong> has been confirmed!</p>
+            <p style="color: #666; line-height: 1.6;">${message}</p>
             
-            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea;">
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid ${isWaitlisted ? '#ff6b6b' : '#667eea'};">
               <h3 style="margin-top: 0; color: #333;">Event Details</h3>
               <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
               ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ''}
               ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
+              ${isWaitlisted ? `<p><strong>Waitlist Position:</strong> #${args.waitlistPosition}</p>` : ''}
             </div>
             
-            <p style="color: #666;">We look forward to seeing you at the event!</p>
+            <p style="color: #666;">${isWaitlisted ? 'We will notify you if a spot becomes available!' : 'We look forward to seeing you at the event!'}</p>
             
             <div style="text-align: center; margin-top: 30px;">
               <p style="color: #999; font-size: 14px;">Best regards,<br>The Event Flow Team</p>
@@ -494,4 +504,53 @@ export const sendEmailToSelectedUsers = mutation({
    },
  });
 
- 
+// Send waitlist promotion email
+export const sendWaitlistPromotionEmail = internalMutation({
+  args: {
+    eventId: v.id("events"),
+    registrationId: v.id("registrations"),
+    to: v.string(),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Get event details
+    const event = await ctx.db.get(args.eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    const emailId = await resend.sendEmail(ctx, {
+      from: `Event Flow <${SENDER_EMAIL}>`,
+      to: args.to,
+      subject: `Great News! You're In: ${event.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">You're In!</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-top: 0;">Hello ${args.name},</h2>
+            
+            <p style="color: #666; line-height: 1.6;">Great news! A spot has opened up for <strong>${event.title}</strong> and you've been promoted from the waitlist!</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <h3 style="margin-top: 0; color: #333;">Event Details</h3>
+              <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ''}
+              ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
+            </div>
+            
+            <p style="color: #666;">Your registration is now confirmed and you're all set to attend the event!</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <p style="color: #999; font-size: 14px;">Best regards,<br>The Event Flow Team</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    return emailId;
+  },
+});

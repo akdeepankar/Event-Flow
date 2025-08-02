@@ -40,6 +40,7 @@ export const createEvent = mutation({
     date: v.string(),
     location: v.optional(v.string()),
     headerImage: v.optional(v.string()),
+    participantLimit: v.optional(v.number()),
     userEmail: v.string(),
   },
   handler: async (ctx, args) => {
@@ -65,6 +66,7 @@ export const updateEvent = mutation({
     date: v.string(),
     location: v.optional(v.string()),
     headerImage: v.optional(v.string()),
+    participantLimit: v.optional(v.number()),
     userEmail: v.string(),
   },
   handler: async (ctx, args) => {
@@ -106,5 +108,34 @@ export const deleteEvent = mutation({
     }
     
     await ctx.db.delete(args.id);
+  },
+}); 
+
+// Toggle registration status
+export const toggleRegistrationStatus = mutation({
+  args: {
+    eventId: v.id("events"),
+    userEmail: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const event = await ctx.db.get(args.eventId);
+    
+    if (!event) {
+      throw new Error("Event not found");
+    }
+    
+    if (event.createdBy !== args.userEmail) {
+      throw new Error("Not authorized to update this event");
+    }
+    
+    const now = Date.now();
+    const newStatus = !event.registrationClosed;
+    
+    await ctx.db.patch(args.eventId, {
+      registrationClosed: newStatus,
+      updatedAt: now,
+    });
+    
+    return { registrationClosed: newStatus };
   },
 }); 
