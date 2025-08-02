@@ -1,0 +1,27 @@
+{
+  "name": "event-flow",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.28.1",
+    "@convex-dev/resend": "^0.1.7",
+    "convex": "^1.25.4",
+    "gh": "^2.8.9",
+    "next": "15.4.5",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.4.5",
+    "tailwindcss": "^4"
+  }
+}
