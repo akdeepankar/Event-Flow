@@ -137,7 +137,7 @@ export default function EventList() {
   };
 
   const handleEventClick = (eventId) => {
-    router.push(`/create/${eventId}`); // Navigate to edit page instead of view page
+    router.push(`/my-events?event=${eventId}`); // Navigate to My Events page with event pre-selected
   };
 
   if (events === undefined) {

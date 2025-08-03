@@ -1,16 +1,20 @@
 "use client";
 
 import { useUser } from "@clerk/nextjs";
+import { useQuery } from "convex/react";
 import { Suspense } from "react";
+import { api } from "../convex/_generated/api";
 import CreateEventCard from "./components/CreateEventCard";
 import EventList from "./components/EventList";
-import AnalyticsCard from "./components/AnalyticsCard";
+import AnalyticsOverview from "./components/AnalyticsOverview";
 import AuthForm from "./components/AuthForm";
 import Navbar from "./components/Navbar";
 import UserProfileSync from "./components/UserProfileSync";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
+  const events = useQuery(api.events.getAllEvents);
+  const registrations = useQuery(api.registrations.getAllRegistrations);
 
   if (!isLoaded) {
     return (
@@ -62,7 +66,11 @@ export default function Home() {
           </div>
           <div>
             <Suspense fallback={<div>Loading...</div>}>
-              <AnalyticsCard />
+              <AnalyticsOverview 
+                events={events} 
+                registrations={registrations}
+                selectedEvent={null}
+              />
             </Suspense>
           </div>
         </div>

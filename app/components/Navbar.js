@@ -35,14 +35,14 @@ export default function Navbar() {
                             Home
                           </Link>
                           <Link 
-                            href="/analytics" 
+                            href="/my-events" 
                             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                              pathname === '/analytics' 
+                              pathname === '/my-events' 
                                 ? "bg-white text-gray-900 shadow-sm" 
                                 : "text-gray-600 hover:text-gray-900"
                             }`}
                           >
-                            Analytics
+                            My Events
                           </Link>
                           <Link 
                             href="/inbox" 

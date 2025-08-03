@@ -40,6 +40,10 @@ export default function EventPage() {
     eventId: params.id
   }, event ? undefined : "skip");
 
+  // Get digital products for this event
+  const digitalProducts = useQuery(api.digitalProducts.getEventDigitalProducts, {
+    eventId: params.id
+  }, event ? undefined : "skip");
 
 
   // Show loading while data is loading
@@ -282,6 +286,63 @@ export default function EventPage() {
                     {new Date(update.createdAt).toLocaleDateString()}
                   </p>
                   <p className="text-gray-700">{update.content}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Digital Store Section - Only show if digital products exist */}
+        {digitalProducts && digitalProducts.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Digital Store</h2>
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {digitalProducts.map((product) => (
+                <div key={product._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-gray-900">
+                        ${(product.price / 100).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
+                  {product.description && (
+                    <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+                  )}
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <span>{product.fileName}</span>
+                    <span>{(product.fileSize / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                  <button
+                    className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
+                    onClick={() => {
+                      // TODO: Implement purchase/download functionality
+                      setPopup({ 
+                        isOpen: true, 
+                        title: "Coming Soon", 
+                        message: "Purchase functionality will be available soon!", 
+                        type: "info" 
+                      });
+                    }}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5M7 13l2.5 5m6-5v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6m6 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4.01" />
+                    </svg>
+                    <span>Purchase</span>
+                  </button>
                 </div>
               ))}
             </div>

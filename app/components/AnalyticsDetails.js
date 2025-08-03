@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Popup from "./Popup";
+import DigitalProductModal from "./DigitalProductModal";
 
 export default function AnalyticsDetails({ events, registrations, selectedEvent, onEventSelect }) {
   // Get registrations for selected event (including cancelled)
@@ -13,16 +14,28 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
     selectedEvent?._id ? undefined : "skip"
   );
 
+  // Get digital products for selected event
+  const digitalProducts = useQuery(
+    api.digitalProducts.getEventDigitalProducts,
+    selectedEvent?._id ? { eventId: selectedEvent._id } : "skip",
+    selectedEvent?._id ? undefined : "skip"
+  );
+
   // Delete registration mutation
   const deleteRegistration = useMutation(api.registrations.cancelRegistration);
   const restoreRegistration = useMutation(api.registrations.restoreRegistration);
   const promoteWaitlisted = useMutation(api.registrations.promoteWaitlistedRegistration);
   const toggleRegistrationStatus = useMutation(api.events.toggleRegistrationStatus);
+  const deleteDigitalProduct = useMutation(api.digitalProducts.deleteDigitalProduct);
+  
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
   const [showRestoreConfirm, setShowRestoreConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
   const [showPromoteConfirm, setShowPromoteConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
+  const [showDeleteProductConfirm, setShowDeleteProductConfirm] = useState({ isOpen: false, productId: null, productName: "" });
   const [activeTab, setActiveTab] = useState("all"); // "all", "registered", "waitlisted", or "cancelled"
+  const [isDigitalProductModalOpen, setIsDigitalProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   // Handle delete registration
   const handleDeleteRegistration = async (registrationId, registrationName) => {
@@ -37,6 +50,23 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
   // Handle promote waitlisted registration
   const handlePromoteWaitlisted = async (registrationId, registrationName) => {
     setShowPromoteConfirm({ isOpen: true, registrationId, registrationName });
+  };
+
+  // Handle delete digital product
+  const handleDeleteDigitalProduct = async (productId, productName, fileStorageId) => {
+    setShowDeleteProductConfirm({ isOpen: true, productId, productName, fileStorageId });
+  };
+
+  // Handle add digital product
+  const handleAddDigitalProduct = () => {
+    setEditingProduct(null);
+    setIsDigitalProductModalOpen(true);
+  };
+
+  // Handle edit digital product
+  const handleEditDigitalProduct = (product) => {
+    setEditingProduct(product);
+    setIsDigitalProductModalOpen(true);
   };
 
   const confirmDeleteRegistration = async () => {
@@ -78,6 +108,20 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
     setShowPromoteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
   };
 
+  const confirmDeleteDigitalProduct = async () => {
+    try {
+      await deleteDigitalProduct({ 
+        id: showDeleteProductConfirm.productId, 
+        fileStorageId: showDeleteProductConfirm.fileStorageId 
+      });
+      setPopup({ isOpen: true, title: "Success", message: "Digital product deleted successfully!", type: "success", autoClose: true });
+    } catch (error) {
+      console.error("Error deleting digital product:", error);
+      setPopup({ isOpen: true, title: "Error", message: "Failed to delete digital product. Please try again.", type: "error" });
+    }
+    setShowDeleteProductConfirm({ isOpen: false, productId: null, productName: "", fileStorageId: "" });
+  };
+
   const closePopup = () => {
     setPopup({ isOpen: false, title: "", message: "", type: "info" });
   };
@@ -92,6 +136,15 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
 
   const closePromoteConfirm = () => {
     setShowPromoteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
+  };
+
+  const closeDeleteProductConfirm = () => {
+    setShowDeleteProductConfirm({ isOpen: false, productId: null, productName: "", fileStorageId: "" });
+  };
+
+  const closeDigitalProductModal = () => {
+    setIsDigitalProductModalOpen(false);
+    setEditingProduct(null);
   };
 
   // Handle toggle registration status
@@ -234,31 +287,47 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
           </div>
         </div>
       )}
-      {/* Event Selection Dropdown */}
-      <div className="mb-6">
-        <label htmlFor="event-select" className="block text-sm font-medium text-gray-700 mb-2">
-          Select Event
-        </label>
-        <select
-          id="event-select"
-          value={selectedEvent?._id || ""}
-          onChange={(e) => {
-            const event = events?.find(evt => evt._id === e.target.value);
-            onEventSelect(event || null);
-          }}
-          className="block w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 text-sm"
-        >
-          <option value="">Choose an event...</option>
-          {events?.map((event) => (
-            <option key={event._id} value={event._id}>
-              {event.title} - {new Date(event.date).toLocaleDateString()}
-              {registrations && (
-                ` (${registrations.filter(r => r.eventId === event._id).length} registrations)`
-              )}
-            </option>
-          ))}
-        </select>
-      </div>
+
+      {/* Delete Digital Product Confirmation Popup */}
+      {showDeleteProductConfirm.isOpen && (
+        <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Digital Product</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete <strong>"{showDeleteProductConfirm.productName}"</strong>? This action cannot be undone.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeDeleteProductConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteDigitalProduct}
+                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Digital Product Modal */}
+      <DigitalProductModal
+        isOpen={isDigitalProductModalOpen}
+        onClose={closeDigitalProductModal}
+        eventId={selectedEvent?._id}
+        product={editingProduct}
+      />
 
       {!selectedEvent ? (
         <div className="text-center py-12">
@@ -647,6 +716,103 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
                         </tr>
                       );
                     })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Digital Store/Downloads */}
+      {selectedEvent && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">Digital Store/Downloads</h2>
+              <div className="w-6 h-6 bg-purple-100 rounded flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-md font-medium text-gray-700">Available Products</h3>
+              <button
+                onClick={handleAddDigitalProduct}
+                className="px-3 py-1 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+              >
+                Add Digital Product
+              </button>
+            </div>
+            {!digitalProducts || digitalProducts.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <p className="text-gray-500 text-sm">No digital products available for this event yet.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Product Name
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Downloads
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {digitalProducts.map((product) => (
+                      <tr key={product._id} className="hover:bg-gray-50 transition-colors duration-150">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                          {product.name}
+                        </td>
+                                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                           ${(product.price / 100).toFixed(2)}
+                         </td>
+                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                           {product.downloads || 0}
+                         </td>
+                         <td className="px-4 py-3 whitespace-nowrap">
+                           <div className="flex space-x-2">
+                                                          <button
+                               onClick={() => handleEditDigitalProduct(product)}
+                               className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center space-x-1 transition-colors"
+                               title="Edit product"
+                             >
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                               </svg>
+                               <span>Edit</span>
+                             </button>
+                             <button
+                               onClick={() => handleDeleteDigitalProduct(product._id, product.name, product.fileStorageId)}
+                               className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1 transition-colors"
+                               title="Delete product"
+                             >
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                               </svg>
+                               <span>Delete</span>
+                             </button>
+                           </div>
+                         </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>

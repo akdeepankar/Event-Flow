@@ -31,6 +31,21 @@ export default defineSchema({
     uploadedBy: v.optional(v.string()), // Clerk user ID
   }).index("by_storageId", ["storageId"]),
   
+  digitalProducts: defineTable({
+    eventId: v.id("events"),
+    name: v.string(),
+    description: v.optional(v.string()),
+    price: v.number(), // Price in cents
+    fileStorageId: v.string(), // Reference to the file in storage
+    fileName: v.string(),
+    fileSize: v.number(),
+    fileType: v.string(),
+    downloads: v.optional(v.number()), // Number of downloads
+    createdBy: v.string(), // Clerk user ID
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_eventId", ["eventId"]).index("by_createdBy", ["createdBy"]),
+  
   registrations: defineTable({
     eventId: v.id("events"),
     name: v.string(),

@@ -9,6 +9,7 @@
  */
 
 import type * as crons from "../crons.js";
+import type * as digitalProducts from "../digitalProducts.js";
 import type * as emails from "../emails.js";
 import type * as events from "../events.js";
 import type * as files from "../files.js";
@@ -34,6 +35,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   crons: typeof crons;
+  digitalProducts: typeof digitalProducts;
   emails: typeof emails;
   events: typeof events;
   files: typeof files;
