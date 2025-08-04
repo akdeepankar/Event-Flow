@@ -138,7 +138,7 @@ export default function EventFormModal({ isOpen, onClose, event = null }) {
           description,
           date,
           location,
-          participantLimit: participantLimit ? parseInt(participantLimit) : null,
+          participantLimit: participantLimit ? parseInt(participantLimit) : undefined,
           headerImage,
           userEmail: user.emailAddresses[0]?.emailAddress || "",
         });
