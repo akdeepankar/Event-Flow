@@ -45,7 +45,7 @@ export const registerForEvent = mutation({
     const isFull = hasLimit && currentCount >= event.participantLimit;
 
     let status = "registered";
-    let waitlistPosition = null;
+    let waitlistPosition = undefined;
 
     if (isFull) {
       // Event is full, add to waitlist
@@ -62,24 +62,36 @@ export const registerForEvent = mutation({
       waitlistPosition = waitlistRegistrations.length + 1;
     }
 
-    const registrationId = await ctx.db.insert("registrations", {
+    const registrationData = {
       eventId: args.eventId,
       name: args.name,
       email: args.email,
       status: status,
-      waitlistPosition: waitlistPosition,
       registeredAt: Date.now(),
-    });
+    };
+
+    // Only add waitlistPosition if it's defined
+    if (waitlistPosition !== undefined) {
+      registrationData.waitlistPosition = waitlistPosition;
+    }
+
+    const registrationId = await ctx.db.insert("registrations", registrationData);
 
     // Send confirmation email
-    await ctx.scheduler.runAfter(0, internal.emails.sendRegistrationEmail, {
+    const emailData = {
       eventId: args.eventId,
       registrationId: registrationId,
       to: args.email,
       name: args.name,
       status: status,
-      waitlistPosition: waitlistPosition,
-    });
+    };
+
+    // Only add waitlistPosition if it's defined
+    if (waitlistPosition !== undefined) {
+      emailData.waitlistPosition = waitlistPosition;
+    }
+
+    await ctx.scheduler.runAfter(0, internal.emails.sendRegistrationEmail, emailData);
 
     return { registrationId, status, waitlistPosition };
   },
