@@ -73,7 +73,7 @@ export default function EventPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">Event Not Found</h1>
-            <p className="text-gray-600 mb-8 text-lg">The event you're looking for doesn't exist or has been deleted.</p>
+            <p className="text-gray-600 mb-8 text-lg">The event you&apos;re looking for doesn&apos;t exist or has been deleted.</p>
             <button
               onClick={() => router.push("/")}
               className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
@@ -381,11 +381,11 @@ export default function EventPage() {
                     <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="font-medium text-green-800">You're Registered!</span>
+                    <span className="font-medium text-green-800">You&apos;re Registered!</span>
                   </div>
                   {userRegistration.status === "waitlisted" && (
                     <p className="text-sm text-green-700">
-                      You're #{userRegistration.waitlistPosition} in the waitlist
+                      You&apos;re #{userRegistration.waitlistPosition} in the waitlist
                     </p>
                   )}
                 </div>
