@@ -2,7 +2,6 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
-import { Suspense } from "react";
 import { api } from "../convex/_generated/api";
 import CreateEventCard from "./components/CreateEventCard";
 import EventList from "./components/EventList";
@@ -36,9 +35,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Suspense fallback={<div>Loading...</div>}>
-        <UserProfileSync />
-      </Suspense>
+      <UserProfileSync />
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -55,23 +52,17 @@ export default function Home() {
         {/* Dashboard Content */}
         <div className="grid gap-8 lg:grid-cols-3">
           <div>
-            <Suspense fallback={<div>Loading...</div>}>
-              <CreateEventCard />
-            </Suspense>
+            <CreateEventCard />
           </div>
           <div>
-            <Suspense fallback={<div>Loading...</div>}>
-              <EventList />
-            </Suspense>
+            <EventList />
           </div>
           <div>
-            <Suspense fallback={<div>Loading...</div>}>
-              <AnalyticsOverview 
-                events={events} 
-                registrations={registrations}
-                selectedEvent={null}
-              />
-            </Suspense>
+            <AnalyticsOverview 
+              events={events} 
+              registrations={registrations}
+              selectedEvent={null}
+            />
           </div>
         </div>
       </main>

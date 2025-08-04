@@ -15,6 +15,13 @@ export default function Popup({
 }) {
   const [isVisible, setIsVisible] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setIsVisible(false);
+    setTimeout(() => {
+      onClose();
+    }, 200); // Allow time for fade out animation
+  }, [onClose]);
+
   useEffect(() => {
     if (isOpen) {
       setIsVisible(true);
@@ -28,13 +35,6 @@ export default function Popup({
       setIsVisible(false);
     }
   }, [isOpen, autoClose, autoCloseDelay, handleClose]);
-
-  const handleClose = useCallback(() => {
-    setIsVisible(false);
-    setTimeout(() => {
-      onClose();
-    }, 200); // Allow time for fade out animation
-  }, [onClose]);
 
   const handleCopyUrl = async () => {
     try {
@@ -100,7 +100,7 @@ export default function Popup({
   if (!isOpen) return null;
 
   return (
-            <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
+    <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
       <div 
         className={`bg-white rounded-2xl shadow-xl max-w-md w-full p-6 transform transition-all duration-200 ${
           isVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
