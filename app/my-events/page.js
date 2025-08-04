@@ -45,7 +45,7 @@ function MyEventsContent() {
         setSelectedEvent(updatedEvent);
       }
     }
-  }, [events, selectedEvent?._id]);
+  }, [events, selectedEvent]);
 
   // Show loading while checking authentication
   if (!isLoaded) {

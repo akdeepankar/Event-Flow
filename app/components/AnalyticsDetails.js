@@ -420,7 +420,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
         setPopup({ 
           isOpen: true, 
           title: "Attendance Marked", 
-          message: `Attendance marked and welcome email sent successfully to ${result.attendeeName}!`, 
+          message: 'Attendance marked and welcome email sent successfully to ' + result.attendeeName + '!', 
           type: "success", 
           autoClose: true 
         });
@@ -429,7 +429,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
         setPopup({ 
           isOpen: true, 
           title: "Already Marked", 
-          message: `${result.attendeeName} has already been marked as attended.`, 
+          message: result.attendeeName + ' has already been marked as attended.', 
           type: "info", 
           autoClose: true 
         });
