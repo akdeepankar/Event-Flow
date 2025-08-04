@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
@@ -10,7 +10,8 @@ import AnalyticsDetails from "../components/AnalyticsDetails";
 import EventFormModal from "../components/EventFormModal";
 import Popup from "../components/Popup";
 
-export default function MyEventsPage() {
+// Component that uses useSearchParams
+function MyEventsContent() {
   const { user, isLoaded } = useUser();
   const searchParams = useSearchParams();
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -104,7 +105,7 @@ export default function MyEventsPage() {
       setPopup({ 
         isOpen: true, 
         title: "Error", 
-        message: "Failed to delete event. Please try again.", 
+        message: "Failed to delete event", 
         type: "error" 
       });
     }
@@ -128,48 +129,13 @@ export default function MyEventsPage() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
-      <div className="pt-16">
-        {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
-          {/* Header and Event Selection Row */}
-          <div className="flex justify-between items-center mb-6 mt-4">
-            {/* Event Selection Dropdown */}
-            <div className="flex items-center space-x-3">
-              <label htmlFor="event-select" className="block text-sm font-medium text-gray-700">
-                Select Event
-              </label>
-              <select
-                id="event-select"
-                value={selectedEvent?._id || ""}
-                onChange={(e) => {
-                  const event = events?.find(evt => evt._id === e.target.value);
-                  setSelectedEvent(event || null);
-                }}
-                className="block px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 text-sm"
-              >
-                <option value="">Choose an event...</option>
-                {events?.map((event) => (
-                  <option key={event._id} value={event._id}>
-                    {event.title} - {new Date(event.date).toLocaleDateString()}
-                    {registrations && (
-                      ` (${registrations.filter(r => r.eventId === event._id).length} registrations)`
-                    )}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Header */}
-            <div className="flex items-center space-x-3">
-              <div className="text-right">
-                <h1 className="text-xl font-semibold text-gray-900">My Events</h1>
-                <p className="text-gray-500 text-sm">Manage your events and registrations</p>
-              </div>
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">My Events</h1>
+              <p className="text-gray-600 mt-2">Manage your events and view analytics</p>
             </div>
           </div>
 
@@ -269,5 +235,23 @@ export default function MyEventsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Loading component for Suspense fallback
+function MyEventsLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function MyEventsPage() {
+  return (
+    <Suspense fallback={<MyEventsLoading />}>
+      <MyEventsContent />
+    </Suspense>
   );
 } 
