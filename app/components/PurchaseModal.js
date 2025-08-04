@@ -342,7 +342,7 @@ export default function PurchaseModal({ isOpen, onClose, product }) {
                        </div>
                      </div>
                      <div className="mt-2 text-xs text-blue-700">
-                       Payment status is monitored automatically. You'll be notified when payment is completed.
+                       Payment status is monitored automatically. You&apos;ll be notified when payment is completed.
                      </div>
                    </div>
                  )}

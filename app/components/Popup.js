@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export default function Popup({ 
   isOpen, 
@@ -27,14 +27,14 @@ export default function Popup({
     } else {
       setIsVisible(false);
     }
-  }, [isOpen, autoClose, autoCloseDelay]);
+  }, [isOpen, autoClose, autoCloseDelay, handleClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsVisible(false);
     setTimeout(() => {
       onClose();
     }, 200); // Allow time for fade out animation
-  };
+  }, [onClose]);
 
   const handleCopyUrl = async () => {
     try {

@@ -248,7 +248,7 @@ export default function MyEventsPage() {
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Event</h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to delete <strong>"{showDeleteConfirm.eventTitle}"</strong>? This action cannot be undone.
+                Are you sure you want to delete <strong>&quot;{showDeleteConfirm.eventTitle}&quot;</strong>? This action cannot be undone.
               </p>
               <div className="flex space-x-3">
                 <button

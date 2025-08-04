@@ -9,6 +9,7 @@ import Navbar from "../../components/Navbar";
 import RegistrationModal from "../../components/RegistrationModal";
 import PurchaseModal from "../../components/PurchaseModal";
 import Popup from "../../components/Popup";
+import Image from "next/image";
 
 export default function EventPage() {
   const params = useParams();
@@ -95,9 +96,11 @@ export default function EventPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 mb-8">
           {headerImageUrl && (
             <div className="mb-6">
-              <img 
+              <Image 
                 src={headerImageUrl} 
                 alt={event.title}
+                width={800}
+                height={400}
                 className="w-full rounded-lg"
                 style={{ maxHeight: '400px', objectFit: 'cover' }}
                 onError={(e) => {

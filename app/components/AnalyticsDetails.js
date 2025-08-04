@@ -310,7 +310,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Digital Product</h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to delete <strong>"{showDeleteProductConfirm.productName}"</strong>? This action cannot be undone.
+                Are you sure you want to delete <strong>&quot;{showDeleteProductConfirm.productName}&quot;</strong>? This action cannot be undone.
               </p>
               <div className="flex space-x-3">
                 <button
