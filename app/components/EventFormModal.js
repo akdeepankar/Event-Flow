@@ -18,6 +18,7 @@ export default function EventFormModal({ isOpen, onClose, event = null }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
+  const [pendingUpdate, setPendingUpdate] = useState(null);
   const fileInputRef = useRef(null);
   
   const { user } = useUser();
@@ -38,7 +39,9 @@ export default function EventFormModal({ isOpen, onClose, event = null }) {
       setDescription(event.description || "");
       setDate(event.date || "");
       setLocation(event.location || "");
-      setParticipantLimit(event.participantLimit ? event.participantLimit.toString() : "");
+      // Handle participantLimit properly - convert to string and handle null/undefined
+      const limit = event.participantLimit;
+      setParticipantLimit(limit && limit > 0 ? limit.toString() : "");
       setHeaderImage(event.headerImage || "");
     } else {
       // Reset form for creating new event
@@ -101,7 +104,23 @@ export default function EventFormModal({ isOpen, onClose, event = null }) {
           updateData.participantLimit = parseInt(participantLimit);
         }
 
-        await updateEvent(updateData);
+        const result = await updateEvent(updateData);
+        
+        if (result && result.warning) {
+          // Store the pending update and show confirmation popup
+          setPendingUpdate({ updateData, result });
+          setPopup({ 
+            isOpen: true, 
+            title: "Participant Limit Warning", 
+            message: result.message, 
+            type: "warning",
+            autoClose: false,
+            onConfirm: handleConfirmLimitDecrease,
+            confirmText: "Continue",
+            cancelText: "Cancel"
+          });
+          return; // Don't close modal, let user decide
+        }
         
         const eventUrl = `${window.location.origin}/event/${event._id}`;
         setPopup({ 
@@ -159,6 +178,48 @@ export default function EventFormModal({ isOpen, onClose, event = null }) {
 
   const closePopup = () => {
     setPopup({ isOpen: false, title: "", message: "", type: "info" });
+  };
+
+  const handleConfirmLimitDecrease = async () => {
+    if (!pendingUpdate) return;
+    
+    setIsSubmitting(true);
+    try {
+      // Proceed with the update with confirmed flag
+      const updateDataWithConfirmation = {
+        ...pendingUpdate.updateData,
+        confirmedLimitDecrease: true
+      };
+      const result = await updateEvent(updateDataWithConfirmation);
+      
+              if (result && result.success) {
+          const eventUrl = `${window.location.origin}/event/${event._id}`;
+          const movedCount = pendingUpdate.result.currentRegisteredCount - pendingUpdate.result.newLimit;
+          const message = movedCount > 0 
+            ? `Your event has been updated. ${movedCount} participant(s) have been moved to the waitlist due to the reduced limit.`
+            : "Your event has been updated successfully!";
+          
+          setPopup({ 
+            isOpen: true, 
+            title: "Event Updated Successfully!", 
+            message: message, 
+            type: "success", 
+            eventUrl: eventUrl,
+            autoClose: false 
+          });
+        
+        // Close modal after success
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Error updating event:", error);
+      setPopup({ isOpen: true, title: "Error", message: "Failed to update event", type: "error" });
+    } finally {
+      setIsSubmitting(false);
+      setPendingUpdate(null);
+    }
   };
 
   const handleFileUpload = async (file) => {
@@ -247,6 +308,9 @@ export default function EventFormModal({ isOpen, onClose, event = null }) {
         type={popup.type}
         autoClose={popup.autoClose}
         eventUrl={popup.eventUrl}
+        onConfirm={popup.onConfirm}
+        confirmText={popup.confirmText}
+        cancelText={popup.cancelText}
       />
       
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">

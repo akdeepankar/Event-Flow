@@ -68,6 +68,7 @@ export const updateEvent = mutation({
     headerImage: v.optional(v.string()),
     participantLimit: v.optional(v.number()),
     userEmail: v.string(),
+    confirmedLimitDecrease: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { id, userEmail, ...updateData } = args;
@@ -83,10 +84,87 @@ export const updateEvent = mutation({
     
     const now = Date.now();
     
+    // Check if participant limit was increased
+    const oldLimit = event.participantLimit || 0;
+    const newLimit = updateData.participantLimit || 0;
+    const limitIncreased = newLimit > oldLimit;
+    
+    // Check if new limit is less than current registered participants
+    const currentRegistrations = await ctx.db
+      .query("registrations")
+      .withIndex("by_eventId_status", (q) => 
+        q.eq("eventId", id).eq("status", "registered")
+      )
+      .collect();
+    
+    const currentRegisteredCount = currentRegistrations.length;
+    const limitDecreased = newLimit > 0 && newLimit < currentRegisteredCount;
+    
+    // Only show warning if not already confirmed
+    if (limitDecreased && !args.confirmedLimitDecrease) {
+      return {
+        success: false,
+        warning: true,
+        message: `The new participant limit (${newLimit}) is less than the current number of registered participants (${currentRegisteredCount}). Some participants will need to be moved to the waitlist to continue.`,
+        currentRegisteredCount,
+        newLimit
+      };
+    }
+    
+    // If limit is being decreased and user confirmed, move excess participants to waitlist
+    const limitDecreasedConfirmed = args.confirmedLimitDecrease && newLimit > 0 && newLimit < currentRegisteredCount;
+    
+    if (limitDecreasedConfirmed) {
+      // Move excess participants to waitlist (last registered first)
+      const excessCount = currentRegisteredCount - newLimit;
+      const participantsToMove = currentRegistrations
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) // Last registered first
+        .slice(0, excessCount);
+      
+      // Get current waitlist count for positioning
+      const waitlistRegistrations = await ctx.db
+        .query("registrations")
+        .withIndex("by_eventId_status", (q) => 
+          q.eq("eventId", id).eq("status", "waitlisted")
+        )
+        .collect();
+      
+      const startWaitlistPosition = waitlistRegistrations.length + 1;
+      
+      // Move participants to waitlist
+      for (let i = 0; i < participantsToMove.length; i++) {
+        const registration = participantsToMove[i];
+        await ctx.db.patch(registration._id, {
+          status: "waitlisted",
+          waitlistPosition: startWaitlistPosition + i
+        });
+        
+        // Send notification email
+        await ctx.scheduler.runAfter(0, "emails:sendWaitlistNotificationEmail", {
+          eventId: id,
+          registrationId: registration._id,
+          to: registration.email,
+          name: registration.name,
+          waitlistPosition: startWaitlistPosition + i,
+        });
+      }
+    }
+    
     await ctx.db.patch(id, {
       ...updateData,
       updatedAt: now,
     });
+    
+    // If participant limit was increased, promote waitlisted participants
+    if (limitIncreased) {
+      await ctx.scheduler.runAfter(0, "registrations:promoteWaitlistedOnLimitIncrease", {
+        eventId: id,
+        newLimit: newLimit,
+        oldLimit: oldLimit,
+      });
+    }
+    
+    return { success: true };
   },
 });
 

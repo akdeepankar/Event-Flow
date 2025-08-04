@@ -54,6 +54,16 @@ export default function Navbar() {
                           >
                             Outbox
                           </Link>
+                          <Link 
+                            href="/settings" 
+                            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                              pathname === '/settings' 
+                                ? "bg-white text-gray-900 shadow-sm" 
+                                : "text-gray-600 hover:text-gray-900"
+                            }`}
+                          >
+                            Settings
+                          </Link>
                         </div>
                       </div>
 

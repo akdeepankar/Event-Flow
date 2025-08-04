@@ -24,16 +24,26 @@ function MyEventsContent() {
   const registrations = useQuery(api.registrations.getAllRegistrations);
   const deleteEvent = useMutation(api.events.deleteEvent);
 
-  // Handle pre-selecting event from query parameter
+  // Handle pre-selecting event from query parameter and update selectedEvent when events change
   useEffect(() => {
     const eventId = searchParams.get('event');
-    if (eventId && events && !selectedEvent) {
+    if (eventId && events) {
       const event = events.find(evt => evt._id === eventId);
       if (event) {
         setSelectedEvent(event);
       }
     }
-  }, [searchParams, events, selectedEvent]);
+  }, [searchParams, events]);
+
+  // Update selectedEvent when events data changes (for cases without URL parameter)
+  useEffect(() => {
+    if (selectedEvent && events) {
+      const updatedEvent = events.find(evt => evt._id === selectedEvent._id);
+      if (updatedEvent) {
+        setSelectedEvent(updatedEvent);
+      }
+    }
+  }, [events, selectedEvent?._id]);
 
   // Show loading while checking authentication
   if (!isLoaded) {
@@ -86,6 +96,30 @@ function MyEventsContent() {
     }
   };
 
+  const handleCopyEventLink = async () => {
+    if (selectedEvent) {
+      const eventUrl = `${window.location.origin}/event/${selectedEvent._id}`;
+      try {
+        await navigator.clipboard.writeText(eventUrl);
+        setPopup({ 
+          isOpen: true, 
+          title: "Link Copied!", 
+          message: "Event link has been copied to your clipboard.", 
+          type: "success", 
+          autoClose: true 
+        });
+      } catch (error) {
+        console.error("Failed to copy link:", error);
+        setPopup({ 
+          isOpen: true, 
+          title: "Error", 
+          message: "Failed to copy link to clipboard", 
+          type: "error" 
+        });
+      }
+    }
+  };
+
   const confirmDeleteEvent = async () => {
     try {
       await deleteEvent({ 
@@ -132,16 +166,9 @@ function MyEventsContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Events</h1>
-              <p className="text-gray-600 mt-2">Manage your events and view analytics</p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex space-x-3">
+          <div className="flex justify-between items-center mb-8 mt-6">
+            <div className="flex items-center space-x-4">
+              {/* Create Event Button */}
               <button
                 onClick={handleCreateEvent}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -151,6 +178,52 @@ function MyEventsContent() {
                 </svg>
                 <span>Create Event</span>
               </button>
+              
+              {/* Event Selection Dropdown */}
+              <div className="relative">
+                <select
+                  value={selectedEvent?._id || ""}
+                  onChange={(e) => {
+                    const eventId = e.target.value;
+                    if (eventId) {
+                      const event = events?.find(evt => evt._id === eventId);
+                      setSelectedEvent(event);
+                    } else {
+                      setSelectedEvent(null);
+                    }
+                  }}
+                  className="block w-48 px-3 py-2 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
+                >
+                  <option value="">Select an event...</option>
+                  {events?.map((event) => (
+                    <option key={event._id} value={event._id}>
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            
+            {/* My Events Title and Tagline */}
+            <div className="text-right">
+              <div className="flex items-center justify-end space-x-2 mb-1">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h1 className="text-xl font-bold text-gray-900">My Events</h1>
+              </div>
+              <p className="text-sm text-gray-600">Manage your events and view analytics</p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end items-center mb-6">
+            <div className="flex space-x-3">
               {selectedEvent && (
                 <>
                   <button
@@ -161,6 +234,15 @@ function MyEventsContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     <span>Edit Event</span>
+                  </button>
+                  <button
+                    onClick={handleCopyEventLink}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Copy Link</span>
                   </button>
                   <button
                     onClick={handleDeleteEvent}

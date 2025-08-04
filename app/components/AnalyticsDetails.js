@@ -26,6 +26,8 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
   const deleteRegistration = useMutation(api.registrations.cancelRegistration);
   const restoreRegistration = useMutation(api.registrations.restoreRegistration);
   const promoteWaitlisted = useMutation(api.registrations.promoteWaitlistedRegistration);
+  const promoteTillLimit = useMutation(api.registrations.promoteWaitlistedTillLimit);
+  const moveToWaitlist = useMutation(api.registrations.moveToWaitlist);
   const toggleRegistrationStatus = useMutation(api.events.toggleRegistrationStatus);
   const deleteDigitalProduct = useMutation(api.digitalProducts.deleteDigitalProduct);
   const deleteSalesAnalytics = useMutation(api.salesAnalytics.deleteSalesAnalytics);
@@ -35,6 +37,8 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
   const [showRestoreConfirm, setShowRestoreConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
   const [showPromoteConfirm, setShowPromoteConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
   const [showDeleteProductConfirm, setShowDeleteProductConfirm] = useState({ isOpen: false, productId: null, productName: "" });
+  const [showPromoteTillLimitConfirm, setShowPromoteTillLimitConfirm] = useState({ isOpen: false });
+  const [showMoveToWaitlistConfirm, setShowMoveToWaitlistConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
   const [activeTab, setActiveTab] = useState("all"); // "all", "registered", "waitlisted", or "cancelled"
   const [isDigitalProductModalOpen, setIsDigitalProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -53,6 +57,16 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
   // Handle promote waitlisted registration
   const handlePromoteWaitlisted = async (registrationId, registrationName) => {
     setShowPromoteConfirm({ isOpen: true, registrationId, registrationName });
+  };
+
+  // Handle promote till limit
+  const handlePromoteTillLimit = async () => {
+    setShowPromoteTillLimitConfirm({ isOpen: true });
+  };
+
+  // Handle move to waitlist
+  const handleMoveToWaitlist = async (registrationId, registrationName) => {
+    setShowMoveToWaitlistConfirm({ isOpen: true, registrationId, registrationName });
   };
 
   // Handle delete digital product
@@ -78,7 +92,9 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
       setPopup({ isOpen: true, title: "Success", message: "Registration removed successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error deleting registration:", error);
-      setPopup({ isOpen: true, title: "Error", message: "Failed to remove registration. Please try again.", type: "error" });
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to remove registration. Please try again.";
+      setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
     }
     setShowDeleteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
   };
@@ -92,23 +108,76 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
       setPopup({ isOpen: true, title: "Success", message: statusMessage, type: "success", autoClose: true });
     } catch (error) {
       console.error("Error restoring registration:", error);
-      setPopup({ isOpen: true, title: "Error", message: "Failed to restore registration. Please try again.", type: "error" });
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to restore registration. Please try again.";
+      setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
     }
     setShowRestoreConfirm({ isOpen: false, registrationId: null, registrationName: "" });
   };
 
   const confirmPromoteWaitlisted = async () => {
     try {
-      await promoteWaitlisted({ registrationId: showPromoteConfirm.registrationId });
-      setPopup({ isOpen: true, title: "Success", message: "Registration promoted to registered status successfully!", type: "success", autoClose: true });
+      const result = await promoteWaitlisted({ registrationId: showPromoteConfirm.registrationId });
+      
+      if (result.success) {
+        setPopup({ isOpen: true, title: "Success", message: "Registration promoted to registered status successfully!", type: "success", autoClose: true });
+      } else {
+        // Handle the case where event is full
+        const errorMessage = result.error || "Failed to promote registration. Please try again.";
+        setPopup({ isOpen: true, title: "Cannot Promote", message: errorMessage, type: "error" });
+      }
     } catch (error) {
       console.error("Error promoting registration:", error);
-      const errorMessage = error.message === "Event is full. Cannot promote waitlisted registration." 
-        ? "Event is full. Cannot promote waitlisted registration."
-        : "Failed to promote registration. Please try again.";
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to promote registration. Please try again.";
       setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
     }
     setShowPromoteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
+  };
+
+  const confirmPromoteTillLimit = async () => {
+    try {
+      const result = await promoteTillLimit({ eventId: selectedEvent._id });
+      
+      if (result.success) {
+        setPopup({ 
+          isOpen: true, 
+          title: "Success", 
+          message: `${result.promotedCount} waitlisted participants have been promoted to registered status!`, 
+          type: "success", 
+          autoClose: true 
+        });
+      } else {
+        // Handle the case where promotion cannot be done
+        const errorMessage = result.error || "Failed to promote participants. Please try again.";
+        setPopup({ isOpen: true, title: "Cannot Promote", message: errorMessage, type: "error" });
+      }
+    } catch (error) {
+      console.error("Error promoting till limit:", error);
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to promote participants. Please try again.";
+      setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
+    }
+    setShowPromoteTillLimitConfirm({ isOpen: false });
+  };
+
+  const confirmMoveToWaitlist = async () => {
+    try {
+      const result = await moveToWaitlist({ registrationId: showMoveToWaitlistConfirm.registrationId });
+      setPopup({ 
+        isOpen: true, 
+        title: "Success", 
+        message: `${showMoveToWaitlistConfirm.registrationName} has been moved to waitlist position #${result.waitlistPosition}`, 
+        type: "success", 
+        autoClose: true 
+      });
+    } catch (error) {
+      console.error("Error moving to waitlist:", error);
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to move participant to waitlist. Please try again.";
+      setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
+    }
+    setShowMoveToWaitlistConfirm({ isOpen: false, registrationId: null, registrationName: "" });
   };
 
   const confirmDeleteDigitalProduct = async () => {
@@ -127,7 +196,9 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
       setPopup({ isOpen: true, title: "Success", message: "Digital product and associated sales data deleted successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error deleting digital product:", error);
-      setPopup({ isOpen: true, title: "Error", message: "Failed to delete digital product. Please try again.", type: "error" });
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to delete digital product. Please try again.";
+      setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
     }
     setShowDeleteProductConfirm({ isOpen: false, productId: null, productName: "", fileStorageId: "" });
   };
@@ -146,6 +217,14 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
 
   const closePromoteConfirm = () => {
     setShowPromoteConfirm({ isOpen: false, registrationId: null, registrationName: "" });
+  };
+
+  const closePromoteTillLimitConfirm = () => {
+    setShowPromoteTillLimitConfirm({ isOpen: false });
+  };
+
+  const closeMoveToWaitlistConfirm = () => {
+    setShowMoveToWaitlistConfirm({ isOpen: false, registrationId: null, registrationName: "" });
   };
 
   const closeDeleteProductConfirm = () => {
@@ -172,7 +251,9 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
       setPopup({ isOpen: true, title: "Success", message: message, type: "success", autoClose: true });
     } catch (error) {
       console.error("Error toggling registration status:", error);
-      setPopup({ isOpen: true, title: "Error", message: "Failed to toggle registration status. Please try again.", type: "error" });
+      // Display the specific error message from the backend
+      const errorMessage = error.message || "Failed to toggle registration status. Please try again.";
+      setPopup({ isOpen: true, title: "Error", message: errorMessage, type: "error" });
     }
   };
 
@@ -291,6 +372,76 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
                   className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Promote
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Promote Till Limit Confirmation Popup */}
+      {showPromoteTillLimitConfirm.isOpen && (
+        <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Promote Till Limit</h3>
+              <p className="text-gray-600 mb-6">
+                This will promote waitlisted participants to registered status until the event reaches its participant limit. 
+                <br /><br />
+                <strong>First come, first serve</strong> - participants will be promoted in order of their registration time.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closePromoteTillLimitConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmPromoteTillLimit}
+                  className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  Promote Till Limit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Move to Waitlist Confirmation Popup */}
+      {showMoveToWaitlistConfirm.isOpen && (
+        <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Move to Waitlist</h3>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to move <strong>{showMoveToWaitlistConfirm.registrationName}</strong> from registered to waitlist status?
+                <br /><br />
+                This will free up a spot for another participant and move this person to the end of the waitlist.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeMoveToWaitlistConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmMoveToWaitlist}
+                  className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  Move to Waitlist
                 </button>
               </div>
             </div>
@@ -604,6 +755,31 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
             </nav>
           </div>
 
+          {/* Promote Till Limit Button for Waitlisted Tab */}
+          {activeTab === "waitlisted" && eventRegistrations && eventRegistrations.filter(reg => reg.status === "waitlisted").length > 0 && (
+            <div className="px-6 py-3 bg-yellow-50 border-b border-yellow-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-yellow-800 font-medium">
+                    Promote waitlisted participants up to the event limit
+                  </span>
+                </div>
+                <button
+                  onClick={handlePromoteTillLimit}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center space-x-2 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span>Promote Till Limit</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="p-6">
             {!eventRegistrations || filteredRegistrations.length === 0 ? (
               <div className="text-center py-8">
@@ -689,16 +865,28 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             {(activeTab === "all" || activeTab === "registered") ? (
-                              <button
-                                onClick={() => handleDeleteRegistration(registration._id, registration.name)}
-                                className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1 transition-colors"
-                                title="Remove registration"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                <span>Remove</span>
-                              </button>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleMoveToWaitlist(registration._id, registration.name)}
+                                  className="text-yellow-600 hover:text-yellow-800 font-medium text-sm flex items-center space-x-1 transition-colors"
+                                  title="Move to waitlist"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                  </svg>
+                                  <span>Waitlist</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteRegistration(registration._id, registration.name)}
+                                  className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1 transition-colors"
+                                  title="Remove registration"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  <span>Remove</span>
+                                </button>
+                              </div>
                             ) : activeTab === "waitlisted" ? (
                               <button
                                 onClick={() => handlePromoteWaitlisted(registration._id, registration.name)}

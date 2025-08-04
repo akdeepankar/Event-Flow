@@ -554,3 +554,113 @@ export const sendWaitlistPromotionEmail = internalMutation({
     return emailId;
   },
 });
+
+// Send waitlist promotion email when participant limit is increased
+export const sendLimitIncreasePromotionEmail = internalMutation({
+  args: {
+    eventId: v.id("events"),
+    registrationId: v.id("registrations"),
+    to: v.string(),
+    name: v.string(),
+    newLimit: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Get event details
+    const event = await ctx.db.get(args.eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    const emailId = await resend.sendEmail(ctx, {
+      from: `Event Flow <${SENDER_EMAIL}>`,
+      to: args.to,
+      subject: `🎉 You're Confirmed: ${event.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">🎉 You're Confirmed!</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-top: 0;">Hello ${args.name},</h2>
+            
+            <p style="color: #666; line-height: 1.6;">Excellent news! The participant limit for <strong>${event.title}</strong> has been increased, and you've been automatically promoted from the waitlist to confirmed registration!</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <h3 style="margin-top: 0; color: #333;">Event Details</h3>
+              <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ''}
+              ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
+              <p><strong>New Participant Limit:</strong> ${args.newLimit}</p>
+            </div>
+            
+            <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
+              <p style="margin: 0; color: #155724; font-weight: 500;">✅ Your registration is now confirmed and you're all set to attend the event!</p>
+            </div>
+            
+            <p style="color: #666;">We're excited to have you join us. See you at the event!</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <p style="color: #999; font-size: 14px;">Best regards,<br>The Event Flow Team</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    return emailId;
+  },
+});
+
+// Send waitlist notification email when moved to waitlist
+export const sendWaitlistNotificationEmail = internalMutation({
+  args: {
+    eventId: v.id("events"),
+    registrationId: v.id("registrations"),
+    to: v.string(),
+    name: v.string(),
+    waitlistPosition: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Get event details
+    const event = await ctx.db.get(args.eventId);
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    const emailId = await resend.sendEmail(ctx, {
+      from: `Event Flow <${SENDER_EMAIL}>`,
+      to: args.to,
+      subject: `Moved to Waitlist: ${event.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">Moved to Waitlist</h1>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-top: 0;">Hello ${args.name},</h2>
+            
+            <p style="color: #666; line-height: 1.6;">Your registration status for <strong>${event.title}</strong> has been changed from registered to waitlist.</p>
+            
+            <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ff6b6b;">
+              <h3 style="margin-top: 0; color: #333;">Event Details</h3>
+              <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+              ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ''}
+              ${event.description ? `<p><strong>Description:</strong> ${event.description}</p>` : ''}
+              <p><strong>Waitlist Position:</strong> #${args.waitlistPosition}</p>
+            </div>
+            
+            <p style="color: #666;">We will notify you if a spot becomes available and you are promoted back to registered status.</p>
+            
+            <div style="text-align: center; margin-top: 30px;">
+              <p style="color: #999; font-size: 14px;">Best regards,<br>The Event Flow Team</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    return emailId;
+  },
+});

@@ -11,7 +11,10 @@ export default function Popup({
   showCloseButton = true,
   autoClose = false,
   autoCloseDelay = 3000,
-  eventUrl = ""
+  eventUrl = "",
+  onConfirm = null,
+  confirmText = "Confirm",
+  cancelText = "Cancel"
 }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -135,14 +138,32 @@ export default function Popup({
             </div>
           )}
           
-          {showCloseButton && (
+          {onConfirm ? (
+            <div className="flex space-x-3 justify-center">
+              <button
+                onClick={handleClose}
+                className="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg transition-colors hover:bg-gray-400"
+              >
+                {cancelText}
+              </button>
+              <button
+                onClick={() => {
+                  onConfirm();
+                  handleClose();
+                }}
+                className={`${typeStyles.buttonColor} text-white px-6 py-2 rounded-lg transition-colors`}
+              >
+                {confirmText}
+              </button>
+            </div>
+          ) : showCloseButton ? (
             <button
               onClick={handleClose}
               className={`${typeStyles.buttonColor} text-white px-6 py-2 rounded-lg transition-colors`}
             >
               OK
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </div>
