@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Popup from "./Popup";
 import DigitalProductModal from "./DigitalProductModal";
+import SalesAnalytics from "./SalesAnalytics";
 
 export default function AnalyticsDetails({ events, registrations, selectedEvent, onEventSelect }) {
   // Get registrations for selected event (including cancelled)
@@ -27,6 +28,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
   const promoteWaitlisted = useMutation(api.registrations.promoteWaitlistedRegistration);
   const toggleRegistrationStatus = useMutation(api.events.toggleRegistrationStatus);
   const deleteDigitalProduct = useMutation(api.digitalProducts.deleteDigitalProduct);
+  const deleteSalesAnalytics = useMutation(api.salesAnalytics.deleteSalesAnalytics);
   
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState({ isOpen: false, registrationId: null, registrationName: "" });
@@ -36,6 +38,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
   const [activeTab, setActiveTab] = useState("all"); // "all", "registered", "waitlisted", or "cancelled"
   const [isDigitalProductModalOpen, setIsDigitalProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [digitalStoreTab, setDigitalStoreTab] = useState('digitalStore'); // "digitalStore" or "salesAnalytics"
 
   // Handle delete registration
   const handleDeleteRegistration = async (registrationId, registrationName) => {
@@ -110,11 +113,18 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
 
   const confirmDeleteDigitalProduct = async () => {
     try {
+      // Delete the digital product
       await deleteDigitalProduct({ 
         id: showDeleteProductConfirm.productId, 
         fileStorageId: showDeleteProductConfirm.fileStorageId 
       });
-      setPopup({ isOpen: true, title: "Success", message: "Digital product deleted successfully!", type: "success", autoClose: true });
+      
+      // Delete associated sales analytics
+      await deleteSalesAnalytics({ 
+        productId: showDeleteProductConfirm.productId 
+      });
+      
+      setPopup({ isOpen: true, title: "Success", message: "Digital product and associated sales data deleted successfully!", type: "success", autoClose: true });
     } catch (error) {
       console.error("Error deleting digital product:", error);
       setPopup({ isOpen: true, title: "Error", message: "Failed to delete digital product. Please try again.", type: "error" });
@@ -724,97 +734,136 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
         </div>
       )}
 
-      {/* Digital Store/Downloads */}
+      {/* Digital Store and Sales Analytics Tabs */}
       {selectedEvent && (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Digital Store/Downloads</h2>
-              <div className="w-6 h-6 bg-purple-100 rounded flex items-center justify-center">
-                <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-md font-medium text-gray-700">Available Products</h3>
-              <button
-                onClick={handleAddDigitalProduct}
-                className="px-3 py-1 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
-              >
-                Add Digital Product
-              </button>
-            </div>
-            {!digitalProducts || digitalProducts.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <p className="text-gray-500 text-sm">No digital products available for this event yet.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product Name
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Downloads
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {digitalProducts.map((product) => (
-                      <tr key={product._id} className="hover:bg-gray-50 transition-colors duration-150">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                          {product.name}
-                        </td>
-                                                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                           ${(product.price / 100).toFixed(2)}
-                         </td>
-                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                           {product.downloads || 0}
-                         </td>
-                         <td className="px-4 py-3 whitespace-nowrap">
-                           <div className="flex space-x-2">
-                                                          <button
-                               onClick={() => handleEditDigitalProduct(product)}
-                               className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center space-x-1 transition-colors"
-                               title="Edit product"
-                             >
-                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                               </svg>
-                               <span>Edit</span>
-                             </button>
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6" aria-label="Tabs">
                              <button
-                               onClick={() => handleDeleteDigitalProduct(product._id, product.name, product.fileStorageId)}
-                               className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1 transition-colors"
-                               title="Delete product"
-                             >
-                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                               </svg>
-                               <span>Delete</span>
-                             </button>
-                           </div>
-                         </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                 onClick={() => setDigitalStoreTab('digitalStore')}
+                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                   digitalStoreTab === 'digitalStore'
+                     ? 'border-purple-500 text-purple-600'
+                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                 }`}
+               >
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  <span>Digital Store</span>
+                </div>
+              </button>
+                             <button
+                 onClick={() => setDigitalStoreTab('salesAnalytics')}
+                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                   digitalStoreTab === 'salesAnalytics'
+                     ? 'border-purple-500 text-purple-600'
+                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                 }`}
+               >
+                <div className="flex items-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span>Sales Analytics</span>
+                </div>
+              </button>
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {/* Digital Store Tab */}
+            {digitalStoreTab === 'digitalStore' && (
+              <div>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-md font-medium text-gray-700">Available Products</h3>
+                  <button
+                    onClick={handleAddDigitalProduct}
+                    className="px-3 py-1 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                  >
+                    Add Digital Product
+                  </button>
+                </div>
+                {!digitalProducts || digitalProducts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <p className="text-gray-500 text-sm">No digital products available for this event yet.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Product Name
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Downloads
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {digitalProducts.map((product) => (
+                          <tr key={product._id} className="hover:bg-gray-50 transition-colors duration-150">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              {product.name}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                              ${(product.price / 100).toFixed(2)}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {product.downloads || 0}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => handleEditDigitalProduct(product)}
+                                  className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center space-x-1 transition-colors"
+                                  title="Edit product"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  <span>Edit</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteDigitalProduct(product._id, product.name, product.fileStorageId)}
+                                  className="text-red-600 hover:text-red-800 font-medium text-sm flex items-center space-x-1 transition-colors"
+                                  title="Delete product"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                  <span>Delete</span>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sales Analytics Tab */}
+            {digitalStoreTab === 'salesAnalytics' && (
+              <div>
+                <SalesAnalytics eventId={selectedEvent._id} />
               </div>
             )}
           </div>

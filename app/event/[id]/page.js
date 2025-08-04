@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import Navbar from "../../components/Navbar";
 import RegistrationModal from "../../components/RegistrationModal";
+import PurchaseModal from "../../components/PurchaseModal";
 import Popup from "../../components/Popup";
 
 export default function EventPage() {
@@ -14,6 +15,8 @@ export default function EventPage() {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
+  const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
 
   
@@ -329,13 +332,8 @@ export default function EventPage() {
                   <button
                     className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
                     onClick={() => {
-                      // TODO: Implement purchase/download functionality
-                      setPopup({ 
-                        isOpen: true, 
-                        title: "Coming Soon", 
-                        message: "Purchase functionality will be available soon!", 
-                        type: "info" 
-                      });
+                      setSelectedProduct(product);
+                      setIsPurchaseModalOpen(true);
                     }}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -360,6 +358,16 @@ export default function EventPage() {
           isEventFull={event.participantLimit && registrationCount?.registered >= event.participantLimit}
         />
       )}
+
+      {/* Purchase Modal */}
+      <PurchaseModal
+        isOpen={isPurchaseModalOpen}
+        onClose={() => {
+          setIsPurchaseModalOpen(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+      />
     </div>
   );
 }

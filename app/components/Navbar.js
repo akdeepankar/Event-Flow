@@ -52,7 +52,7 @@ export default function Navbar() {
                                 : "text-gray-600 hover:text-gray-900"
                             }`}
                           >
-                            Inbox
+                            Outbox
                           </Link>
                         </div>
                       </div>

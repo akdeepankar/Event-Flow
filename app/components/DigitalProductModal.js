@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "../../convex/_generated/api";
@@ -10,12 +10,32 @@ export default function DigitalProductModal({ isOpen, onClose, eventId, product 
   const fileInputRef = useRef(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: product?.name || "",
-    description: product?.description || "",
-    price: product ? (product.price / 100).toString() : "", // Convert cents to dollars for display
+    name: "",
+    description: "",
+    price: "",
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // Update form data when product prop changes (for editing)
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || "",
+        description: product.description || "",
+        price: product.price ? (product.price / 100).toString() : "", // Convert cents to dollars for display
+      });
+    } else {
+      // Reset form when adding new product
+      setFormData({
+        name: "",
+        description: "",
+        price: "",
+      });
+    }
+    setSelectedFile(null);
+    setUploadProgress(0);
+  }, [product]);
 
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const saveFileMetadata = useMutation(api.files.saveFileMetadata);
@@ -144,7 +164,7 @@ export default function DigitalProductModal({ isOpen, onClose, eventId, product 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">

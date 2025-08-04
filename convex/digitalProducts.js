@@ -91,4 +91,18 @@ export const getUserDigitalProducts = query({
       .order("desc")
       .collect();
   },
+});
+
+// Update product downloads count
+export const updateProductDownloads = mutation({
+  args: {
+    productId: v.id("digitalProducts"),
+    downloads: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.productId, {
+      downloads: args.downloads,
+      updatedAt: Date.now(),
+    });
+  },
 }); 

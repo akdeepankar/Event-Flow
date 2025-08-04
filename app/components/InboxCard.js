@@ -13,7 +13,7 @@ export default function InboxCard() {
             </svg>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Inbox</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Outbox</h3>
             <p className="text-sm text-gray-600">Email management</p>
           </div>
         </div>
@@ -42,7 +42,7 @@ export default function InboxCard() {
         href="/inbox"
         className="inline-flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
       >
-        Open Inbox
+                        Open Outbox
         <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>

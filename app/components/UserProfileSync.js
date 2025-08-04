@@ -7,7 +7,7 @@ import { api } from "../../convex/_generated/api";
 
 export default function UserProfileSync() {
   const { user, isLoaded } = useUser();
-  const createOrUpdateUser = useMutation(api.users.createOrUpdateUser);
+  const upsertUser = useMutation(api.users.upsertUser);
 
   useEffect(() => {
     if (isLoaded && user) {
@@ -15,12 +15,13 @@ export default function UserProfileSync() {
       const userEmail = user.emailAddresses[0]?.emailAddress || "";
       const userName = user.firstName || user.emailAddresses[0]?.emailAddress?.split('@')[0] || 'User';
       
-      createOrUpdateUser({
+      upsertUser({
+        clerkId: userEmail, // Use email as the unique identifier
         email: userEmail,
         name: userName,
       }).catch(console.error);
     }
-  }, [isLoaded, user, createOrUpdateUser]);
+  }, [isLoaded, user, upsertUser]);
 
   // This component doesn't render anything
   return null;

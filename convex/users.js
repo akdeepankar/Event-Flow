@@ -1,74 +1,95 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
-// Query to get current user profile
-export const getCurrentUser = query({
-  args: { email: v.string() },
+// Get user by email (clerkId field stores email)
+export const getUserByClerkId = query({
+  args: { clerkId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
+    return await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
       .first();
-
-    return user;
   },
 });
 
-// Mutation to create or update user profile
-export const createOrUpdateUser = mutation({
-  args: {
-    email: v.string(),
-    name: v.string(),
-  },
+// Get user by email
+export const getUserByEmail = query({
+  args: { email: v.string() },
   handler: async (ctx, args) => {
-    // Check if user already exists
-    const existingUser = await ctx.db
+    return await ctx.db
       .query("users")
       .withIndex("by_email", (q) => q.eq("email", args.email))
+      .first();
+  },
+});
+
+// Create or update user
+export const upsertUser = mutation({
+  args: {
+    clerkId: v.string(),
+    name: v.string(),
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
       .first();
 
     if (existingUser) {
-      // Update existing user
-      await ctx.db.patch(existingUser._id, {
+      return await ctx.db.patch(existingUser._id, {
         name: args.name,
         email: args.email,
       });
-      return existingUser._id;
+    } else {
+      return await ctx.db.insert("users", {
+        ...args,
+        createdAt: Date.now(),
+      });
     }
-
-    // Create new user
-    const newUserId = await ctx.db.insert("users", {
-      clerkId: args.email, // Use email as clerkId for now
-      name: args.name,
-      email: args.email,
-      createdAt: Date.now(),
-    });
-
-    return newUserId;
   },
 });
 
-// Mutation to update user profile
-export const updateUserProfile = mutation({
+// Update user's Razorpay credentials
+export const updateRazorpayCredentials = mutation({
   args: {
-    email: v.string(),
-    name: v.optional(v.string()),
+    clerkId: v.string(), // User's email address
+    razorpayKeyId: v.string(),
+    razorpayKeySecret: v.string(),
   },
   handler: async (ctx, args) => {
-    const { email, ...updates } = args;
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", email))
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
       .first();
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    await ctx.db.patch(user._id, {
-      ...updates,
+    return await ctx.db.patch(user._id, {
+      razorpayKeyId: args.razorpayKeyId,
+      razorpayKeySecret: args.razorpayKeySecret,
     });
+  },
+});
 
-    return user._id;
+// Get user's Razorpay credentials
+export const getRazorpayCredentials = query({
+  args: { clerkId: v.string() }, // User's email address
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      razorpayKeyId: user.razorpayKeyId,
+      razorpayKeySecret: user.razorpayKeySecret,
+    };
   },
 }); 

@@ -15,9 +15,12 @@ import type * as events from "../events.js";
 import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
+import type * as payments from "../payments.js";
 import type * as registrations from "../registrations.js";
+import type * as salesAnalytics from "../salesAnalytics.js";
 import type * as updates from "../updates.js";
 import type * as users from "../users.js";
+import type * as webhooks from "../webhooks.js";
 
 import type {
   ApiFromModules,
@@ -41,9 +44,12 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   http: typeof http;
   migrations: typeof migrations;
+  payments: typeof payments;
   registrations: typeof registrations;
+  salesAnalytics: typeof salesAnalytics;
   updates: typeof updates;
   users: typeof users;
+  webhooks: typeof webhooks;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
