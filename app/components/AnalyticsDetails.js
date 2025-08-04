@@ -1011,7 +1011,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
               <p className="text-gray-600 mb-6">
                 Mark attendance for <strong>{showAttendanceConfirm.registrationName}</strong> at <strong>{showAttendanceConfirm.registrationEmail}</strong>?
                 <br /><br />
-                <strong>Note:</strong> This will mark them as attended, they will appear in the "Attended" tab, and a welcome email will be automatically sent to them.
+                <strong>Note:</strong> This will mark them as attended, they will appear in the &quot;Attended&quot; tab, and a welcome email will be automatically sent to them.
               </p>
               <div className="flex space-x-3">
                 <button
@@ -1401,7 +1401,7 @@ export default function AnalyticsDetails({ events, registrations, selectedEvent,
             </div>
             {searchQuery && (
               <div className="mt-2 text-sm text-gray-600">
-                Found {filteredRegistrations.length} result{filteredRegistrations.length !== 1 ? 's' : ''} for "{searchQuery}"
+                Found {filteredRegistrations.length} result{filteredRegistrations.length !== 1 ? 's' : ''} for &quot;{searchQuery}&quot;
               </div>
             )}
           </div>
