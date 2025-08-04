@@ -90,7 +90,7 @@ export default defineSchema({
     eventId: v.id("events"),
     title: v.string(),
     content: v.string(),
-    status: v.union(v.literal("draft"), v.literal("published"), v.literal("sent")),
+    status: v.union(v.literal("draft"), v.literal("published"), v.literal("sent"), v.literal("failed")),
     createdBy: v.string(), // Clerk user ID
     createdAt: v.number(),
     publishedAt: v.optional(v.number()),

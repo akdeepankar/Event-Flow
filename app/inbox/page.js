@@ -24,7 +24,6 @@ export default function InboxPage() {
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateContent, setUpdateContent] = useState("");
   const [isCreatingUpdate, setIsCreatingUpdate] = useState(false);
-  const [isPublishingUpdate, setIsPublishingUpdate] = useState(false);
   const [selectedUpdate, setSelectedUpdate] = useState(null);
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   
@@ -48,7 +47,6 @@ export default function InboxPage() {
   const createUpdate = useMutation(api.updates.createUpdate);
   const updateUpdate = useMutation(api.updates.updateUpdate);
   const deleteUpdate = useMutation(api.updates.deleteUpdate);
-  const publishAndSendUpdate = useMutation(api.updates.publishAndSendUpdate);
 
   if (!isLoaded) {
     return (
@@ -231,33 +229,20 @@ export default function InboxPage() {
         createdBy: user.id,
       });
       
-      setPopup({ isOpen: true, title: "Success", message: "Update created successfully!", type: "success", autoClose: true });
+      setPopup({ isOpen: true, title: "Success", message: "Update published and sent to all registrants!", type: "success", autoClose: true });
       setUpdateTitle("");
       setUpdateContent("");
       return true;
     } catch (error) {
       console.error("Error creating update:", error);
-      setPopup({ isOpen: true, title: "Error", message: "Failed to create update. Please try again.", type: "error" });
+      setPopup({ isOpen: true, title: "Error", message: "Failed to publish update. Please try again.", type: "error" });
       return false;
     } finally {
       setIsCreatingUpdate(false);
     }
   };
 
-  const handlePublishAndSendUpdate = async (updateId) => {
-    if (confirm("Are you sure you want to publish and send this update to all event registrants?")) {
-      setIsPublishingUpdate(true);
-      try {
-        await publishAndSendUpdate({ updateId });
-        setPopup({ isOpen: true, title: "Success", message: "Update published and sent successfully!", type: "success", autoClose: true });
-      } catch (error) {
-        console.error("Error publishing update:", error);
-        setPopup({ isOpen: true, title: "Error", message: "Failed to publish update. Please try again.", type: "error" });
-      } finally {
-        setIsPublishingUpdate(false);
-      }
-    }
-  };
+  // Removed handlePublishAndSendUpdate since updates are now published automatically
 
   const handleDeleteUpdate = async (updateId) => {
     if (confirm("Are you sure you want to delete this update?")) {
@@ -438,24 +423,22 @@ export default function InboxPage() {
                   )}
 
                   {activeTab === "updates" && (
-                    <UpdatesTab
-                      selectedEventDetails={selectedEventDetails}
-                      updates={updates}
-                      updateStats={updateStats}
-                      updateTitle={updateTitle}
-                      setUpdateTitle={setUpdateTitle}
-                      updateContent={updateContent}
-                      setUpdateContent={setUpdateContent}
-                      selectedUpdate={selectedUpdate}
-                      isCreatingUpdate={isCreatingUpdate}
-                      isPublishingUpdate={isPublishingUpdate}
-                      handleCreateUpdate={handleCreateUpdate}
-                      handlePublishAndSendUpdate={handlePublishAndSendUpdate}
-                      handleDeleteUpdate={handleDeleteUpdate}
-                      handleEditUpdate={handleEditUpdate}
-                      handleSaveEdit={handleSaveEdit}
-                      handleCancelEdit={handleCancelEdit}
-                    />
+                                <UpdatesTab
+              selectedEventDetails={selectedEventDetails}
+              updates={updates}
+              updateStats={updateStats}
+              updateTitle={updateTitle}
+              setUpdateTitle={setUpdateTitle}
+              updateContent={updateContent}
+              setUpdateContent={setUpdateContent}
+              selectedUpdate={selectedUpdate}
+              isCreatingUpdate={isCreatingUpdate}
+              handleCreateUpdate={handleCreateUpdate}
+              handleDeleteUpdate={handleDeleteUpdate}
+              handleEditUpdate={handleEditUpdate}
+              handleSaveEdit={handleSaveEdit}
+              handleCancelEdit={handleCancelEdit}
+            />
                   )}
                 </div>
               </>
@@ -513,9 +496,7 @@ function UpdatesTab({
   setUpdateContent,
   selectedUpdate,
   isCreatingUpdate,
-  isPublishingUpdate,
   handleCreateUpdate,
-  handlePublishAndSendUpdate,
   handleDeleteUpdate,
   handleEditUpdate,
   handleSaveEdit,
@@ -539,16 +520,16 @@ function UpdatesTab({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-bold text-gray-900 mb-2">Event Updates</h3>
-          <p className="text-gray-600">Manage your event updates and announcements</p>
+          <p className="text-gray-600">Publish updates and announcements to all event registrants</p>
         </div>
           <button
           onClick={() => setShowUpdateModal(true)}
           className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center space-x-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
           </svg>
-          <span>Add Update</span>
+          <span>Publish Update</span>
           </button>
       </div>
 
@@ -564,20 +545,6 @@ function UpdatesTab({
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Updates</p>
               <p className="text-2xl font-bold text-gray-900">{updateStats?.total || 0}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="flex items-center">
-            <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Drafts</p>
-              <p className="text-2xl font-bold text-gray-900">{updateStats?.draft || 0}</p>
             </div>
           </div>
         </div>
@@ -609,6 +576,20 @@ function UpdatesTab({
             </div>
           </div>
         </div>
+        
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Failed</p>
+              <p className="text-2xl font-bold text-red-600">{updateStats?.failed || 0}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Updates List */}
@@ -632,11 +613,11 @@ function UpdatesTab({
               </div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">No Updates Yet</h4>
               <p className="text-gray-500 mb-6">You haven&apos;t created any updates yet</p>
-          <button
+                        <button
                 onClick={() => setShowUpdateModal(true)}
                 className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
               >
-                Create Your First Update
+                Publish Your First Update
           </button>
             </div>
           ) : (
@@ -695,29 +676,6 @@ function UpdatesTab({
                           </>
                         ) : (
                           <>
-                            {update.status === "draft" && (
-                              <>
-                                <button
-                                  onClick={() => handleEditUpdate(update)}
-                                  className="text-blue-600 hover:text-blue-800 p-1"
-                                  title="Edit update"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                </button>
-                                <button
-                                  onClick={() => handlePublishAndSendUpdate(update._id)}
-                                  disabled={isPublishingUpdate}
-                                  className="text-green-600 hover:text-green-800 p-1 disabled:opacity-50"
-                                  title="Publish and send to all registrants"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                  </svg>
-                                </button>
-                              </>
-                            )}
                             <button
                               onClick={() => handleDeleteUpdate(update._id)}
                               className="text-red-600 hover:text-red-800 p-1"
@@ -814,9 +772,9 @@ function UpdateForm({
       <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 rounded-2xl">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
           <svg className="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
           </svg>
-          Create New Update
+          Publish New Update
         </h3>
         
         <div className="space-y-6">
@@ -878,14 +836,14 @@ function UpdateForm({
           {isCreatingUpdate ? (
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-              <span>Creating...</span>
+              <span>Publishing...</span>
             </>
           ) : (
             <>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
-              <span>Create Update</span>
+              <span>Publish Update</span>
             </>
           )}
                   </button>

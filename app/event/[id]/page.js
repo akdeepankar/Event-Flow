@@ -61,7 +61,7 @@ export default function EventPage() {
     );
   }
 
-  // Show event not found message
+      // Show event not found message
   if (!event) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -294,86 +294,86 @@ export default function EventPage() {
                     <div>
                       <div className="text-2xl font-bold text-orange-600">{Math.max(0, event.participantLimit - (registrationCount?.registered || 0))}</div>
                       <div className="text-sm text-gray-600">Available</div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Action Buttons */}
+            {/* Action Buttons */}
               <div className="space-y-3">
-                {user ? (
-                  event.registrationClosed ? (
+              {user ? (
+                event.registrationClosed ? (
                     <div className="px-4 py-3 rounded-xl bg-red-100 text-red-700 flex items-center justify-center space-x-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                       <span className="font-medium">Registration Closed</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setIsRegistrationModalOpen(true)}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setIsRegistrationModalOpen(true)}
                       className={`w-full px-6 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 font-medium ${
-                        event.participantLimit && registrationCount?.registered >= event.participantLimit
+                      event.participantLimit && registrationCount?.registered >= event.participantLimit
                           ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white'
                           : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
-                      }`}
-                    >
+                    }`}
+                  >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <span>
-                        {event.participantLimit && registrationCount?.registered >= event.participantLimit
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>
+                      {event.participantLimit && registrationCount?.registered >= event.participantLimit
                           ? 'Join Waitlist'
                           : 'Register Now'
-                        }
-                      </span>
-                    </button>
-                  )
-                ) : (
-                  event.registrationClosed ? (
+                      }
+                    </span>
+                  </button>
+                )
+              ) : (
+                event.registrationClosed ? (
                     <div className="px-4 py-3 rounded-xl bg-red-100 text-red-700 flex items-center justify-center space-x-2">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                       <span className="font-medium">Registration Closed</span>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => router.push("/sign-up")}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => router.push("/sign-up")}
                       className={`w-full px-6 py-3 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 font-medium ${
-                        event.participantLimit && registrationCount?.registered >= event.participantLimit
+                      event.participantLimit && registrationCount?.registered >= event.participantLimit
                           ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white'
                           : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
-                      }`}
-                    >
+                    }`}
+                  >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      <span>
-                        {event.participantLimit && registrationCount?.registered >= event.participantLimit
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>
+                      {event.participantLimit && registrationCount?.registered >= event.participantLimit
                           ? 'Sign Up for Waitlist'
-                          : 'Sign Up to Register'
-                        }
-                      </span>
-                    </button>
-                  )
-                )}
+                        : 'Sign Up to Register'
+                      }
+                    </span>
+                  </button>
+                )
+              )}
 
-                <button
-                  onClick={() => {
-                    const link = `${window.location.origin}/event/${params.id}`;
-                    navigator.clipboard.writeText(link);
-                    setPopup({ isOpen: true, title: "Success", message: "Event link copied to clipboard!", type: "success", autoClose: true });
-                  }}
+              <button
+                onClick={() => {
+                  const link = `${window.location.origin}/event/${params.id}`;
+                  navigator.clipboard.writeText(link);
+                  setPopup({ isOpen: true, title: "Success", message: "Event link copied to clipboard!", type: "success", autoClose: true });
+                }}
                   className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 font-medium"
-                >
+              >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                   </svg>
                   <span>Share Event</span>
                 </button>
               </div>
-
+              
               {/* User Registration Status */}
               {user && userRegistration?.isRegistered && (
                 <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
@@ -399,7 +399,7 @@ export default function EventPage() {
                   <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </div>
+          </div>
                 Event Details
               </h3>
               <div className="space-y-4">
@@ -410,7 +410,7 @@ export default function EventPage() {
                   <div>
                     <div className="text-sm text-gray-500">Date</div>
                     <div className="font-medium text-gray-900">{event.date}</div>
-                  </div>
+        </div>
                 </div>
                 
                 {event.location && (
@@ -422,22 +422,22 @@ export default function EventPage() {
                     <div>
                       <div className="text-sm text-gray-500">Location</div>
                       <div className="font-medium text-gray-900">{event.location}</div>
-                    </div>
-                  </div>
-                )}
+            </div>
+          </div>
+        )}
 
                 {registrationCount?.waitlisted > 0 && (
                   <div className="flex items-center space-x-3 p-3 bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-lg">
                     <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                </svg>
                     <div>
                       <div className="text-sm text-yellow-600">Waitlist</div>
                       <div className="font-medium text-yellow-800">{registrationCount.waitlisted} people waiting</div>
                     </div>
                   </div>
                 )}
-              </div>
+                </div>
             </div>
 
 

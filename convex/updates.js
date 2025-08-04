@@ -11,7 +11,7 @@ export const resend = new Resend(components.resend, {
 // Use a verified sender address for test mode
 const SENDER_EMAIL = "onboarding@resend.dev"; // Resend's default verified sender
 
-// Create a new update
+// Create and publish a new update
 export const createUpdate = mutation({
   args: {
     eventId: v.id("events"),
@@ -20,13 +20,20 @@ export const createUpdate = mutation({
     createdBy: v.string(),
   },
   handler: async (ctx, args) => {
+    // Create the update as published
     const updateId = await ctx.db.insert("updates", {
       eventId: args.eventId,
       title: args.title,
       content: args.content,
-      status: "draft",
+      status: "published",
       createdBy: args.createdBy,
       createdAt: Date.now(),
+      publishedAt: Date.now(),
+    });
+
+    // Immediately send to all registrants
+    await ctx.runMutation(api.updates.sendUpdateToRegistrants, {
+      updateId: updateId,
     });
 
     return updateId;
@@ -63,7 +70,7 @@ export const updateUpdate = mutation({
     updateId: v.id("updates"),
     title: v.optional(v.string()),
     content: v.optional(v.string()),
-    status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("sent"))),
+    status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("sent"), v.literal("failed"))),
   },
   handler: async (ctx, args) => {
     const { updateId, ...updateData } = args;
@@ -110,10 +117,12 @@ export const sendUpdateToRegistrants = internalMutation({
       .collect();
 
     if (registrations.length === 0) {
-      // Mark as failed if no registrations
+      // Mark as sent even if no registrations (no one to send to)
       await ctx.db.patch(args.updateId, { 
-        status: "failed",
-        error: "No registrations found for this event"
+        status: "sent",
+        sentAt: Date.now(),
+        emailIds: [],
+        error: "No registrations found for this event - update published but no emails sent"
       });
       return;
     }

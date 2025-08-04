@@ -126,16 +126,16 @@ export default function SignInPage() {
                   <div className="text-center mb-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
                       Welcome Back
-                    </h2>
+          </h2>
                     <p className="text-gray-600">
                       Sign in to continue managing your events
-                    </p>
-                  </div>
-                  
-                  <SignIn 
+          </p>
+        </div>
+        
+        <SignIn 
                     routing="path"
-                    appearance={{
-                      elements: {
+          appearance={{
+            elements: {
                         formButtonPrimary: "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg",
                         card: "shadow-none bg-transparent",
                         headerTitle: "hidden",
@@ -152,10 +152,10 @@ export default function SignInPage() {
                         formResendCodeLink: "text-blue-600 hover:text-blue-700",
                         alertText: "text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3",
                         alert: "bg-red-50 border border-red-200 rounded-xl",
-                      }
-                    }}
-                  />
-                </div>
+            }
+          }}
+        />
+      </div>
               </div>
             </div>
           </div>

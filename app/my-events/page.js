@@ -18,6 +18,7 @@ function MyEventsContent() {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState({ isOpen: false, eventId: null, eventTitle: "" });
+  const [showExportConfirm, setShowExportConfirm] = useState({ isOpen: false, eventId: null, eventTitle: "" });
   const [popup, setPopup] = useState({ isOpen: false, title: "", message: "", type: "info" });
   
   const events = useQuery(api.events.getAllEvents);
@@ -96,6 +97,16 @@ function MyEventsContent() {
     }
   };
 
+  const handleExportEvent = () => {
+    if (selectedEvent) {
+      setShowExportConfirm({ 
+        isOpen: true, 
+        eventId: selectedEvent._id, 
+        eventTitle: selectedEvent.title 
+      });
+    }
+  };
+
   const handleCopyEventLink = async () => {
     if (selectedEvent) {
       const eventUrl = `${window.location.origin}/event/${selectedEvent._id}`;
@@ -157,6 +168,71 @@ function MyEventsContent() {
 
   const closeDeleteConfirm = () => {
     setShowDeleteConfirm({ isOpen: false, eventId: null, eventTitle: "" });
+  };
+
+  const confirmExportEvent = async () => {
+    try {
+      // Get event data
+      const event = events?.find(evt => evt._id === showExportConfirm.eventId);
+      if (!event) {
+        setPopup({ 
+          isOpen: true, 
+          title: "Error", 
+          message: "Event not found", 
+          type: "error" 
+        });
+        return;
+      }
+
+      // Get registrations for this event
+      const eventRegistrations = registrations?.filter(reg => reg.eventId === showExportConfirm.eventId) || [];
+      
+      // Get digital products for this event
+      const digitalProducts = await fetch(`/api/events/${showExportConfirm.eventId}/products`).then(res => res.json()).catch(() => []);
+
+      // Prepare email data
+      const emailData = {
+        event: event,
+        registrations: eventRegistrations,
+        digitalProducts: digitalProducts,
+        userEmail: user.emailAddresses[0]?.emailAddress || "",
+        eventId: showExportConfirm.eventId
+      };
+
+      // Send export email
+      const response = await fetch('/api/export-event', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      });
+
+      if (response.ok) {
+        setPopup({ 
+          isOpen: true, 
+          title: "Export Successful", 
+          message: "Event data has been sent to your email!", 
+          type: "success", 
+          autoClose: true 
+        });
+      } else {
+        throw new Error('Export failed');
+      }
+    } catch (error) {
+      console.error("Error exporting event:", error);
+      setPopup({ 
+        isOpen: true, 
+        title: "Export Failed", 
+        message: "Failed to export event data. Please try again.", 
+        type: "error" 
+      });
+    }
+    setShowExportConfirm({ isOpen: false, eventId: null, eventTitle: "" });
+  };
+
+  const closeExportConfirm = () => {
+    setShowExportConfirm({ isOpen: false, eventId: null, eventTitle: "" });
   };
 
   return (
@@ -245,6 +321,15 @@ function MyEventsContent() {
                     <span>Copy Link</span>
                   </button>
                   <button
+                    onClick={handleExportEvent}
+                    className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Export Event</span>
+                  </button>
+                  <button
                     onClick={handleDeleteEvent}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
                   >
@@ -310,6 +395,39 @@ function MyEventsContent() {
                   className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Confirmation Popup */}
+      {showExportConfirm.isOpen && (
+        <div className="fixed inset-0 bg-transparent backdrop-blur-md flex items-center justify-center z-60 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Export Event Data</h3>
+              <p className="text-gray-600 mb-6">
+                Event data for <strong>&quot;{showExportConfirm.eventTitle}&quot;</strong> will be shared to your email. This includes all event details, statistics, digital store information, and sales data.
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={closeExportConfirm}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmExportEvent}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Export
                 </button>
               </div>
             </div>
