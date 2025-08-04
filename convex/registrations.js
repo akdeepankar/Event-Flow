@@ -368,7 +368,7 @@ export const restoreRegistration = mutation({
     const isFull = hasLimit && currentCount >= event.participantLimit;
 
     let status = "registered";
-    let waitlistPosition = null;
+    let waitlistPosition = undefined;
 
     if (isFull) {
       // Event is full, add to waitlist
@@ -391,21 +391,27 @@ export const restoreRegistration = mutation({
     };
     
     // Only include waitlistPosition if it has a value
-    if (waitlistPosition !== null) {
+    if (waitlistPosition !== undefined) {
       updateData.waitlistPosition = waitlistPosition;
     }
 
     await ctx.db.patch(args.registrationId, updateData);
 
     // Send notification email
-    await ctx.scheduler.runAfter(0, internal.emails.sendRegistrationEmail, {
+    const emailData = {
       eventId: registration.eventId,
       registrationId: args.registrationId,
       to: registration.email,
       name: registration.name,
       status: status,
-      waitlistPosition: waitlistPosition,
-    });
+    };
+
+    // Only include waitlistPosition if it's defined
+    if (waitlistPosition !== undefined) {
+      emailData.waitlistPosition = waitlistPosition;
+    }
+
+    await ctx.scheduler.runAfter(0, internal.emails.sendRegistrationEmail, emailData);
     
     return { success: true, status, waitlistPosition };
   },
@@ -528,7 +534,7 @@ export const promoteWaitlistedOnLimitIncrease = internalMutation({
       // Promote to registered
       await ctx.db.patch(registration._id, {
         status: "registered",
-        waitlistPosition: null // Clear waitlist position
+        // Remove waitlistPosition field entirely since it's optional
       });
 
       // Send promotion email
@@ -626,7 +632,7 @@ export const promoteWaitlistedTillLimit = mutation({
       // Promote to registered
       await ctx.db.patch(registration._id, {
         status: "registered",
-        waitlistPosition: null // Clear waitlist position
+        // Remove waitlistPosition field entirely since it's optional
       });
 
       // Send promotion email
