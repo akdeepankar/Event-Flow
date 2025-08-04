@@ -13,7 +13,8 @@ export async function POST(request) {
       eventId: eventId
     });
 
-    const digitalProductsData = await convex.query(api.digitalProducts.getEventDigitalProducts, {
+    // Use digital products data passed from frontend, or fetch from Convex if not provided
+    const digitalProductsData = digitalProducts || await convex.query(api.digitalProducts.getEventDigitalProducts, {
       eventId: eventId
     });
 

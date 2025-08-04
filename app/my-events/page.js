@@ -24,6 +24,7 @@ function MyEventsContent() {
   const events = useQuery(api.events.getAllEvents);
   const registrations = useQuery(api.registrations.getAllRegistrations);
   const deleteEvent = useMutation(api.events.deleteEvent);
+  const sendEventExportReport = useMutation(api.passes.sendEventExportReport);
 
   // Handle pre-selecting event from query parameter and update selectedEvent when events change
   useEffect(() => {
@@ -188,37 +189,45 @@ function MyEventsContent() {
       const eventRegistrations = registrations?.filter(reg => reg.eventId === showExportConfirm.eventId) || [];
       
       // Get digital products for this event
-      const digitalProducts = await fetch(`/api/events/${showExportConfirm.eventId}/products`).then(res => res.json()).catch(() => []);
+      const digitalProductsResponse = await fetch(`/api/events/${showExportConfirm.eventId}/products`).then(res => res.json()).catch(() => ({ success: false, data: [] }));
+      const digitalProducts = digitalProductsResponse.success ? digitalProductsResponse.data : [];
 
-      // Prepare email data
-      const emailData = {
-        event: event,
-        registrations: eventRegistrations,
-        digitalProducts: digitalProducts,
-        userEmail: user.emailAddresses[0]?.emailAddress || "",
-        eventId: showExportConfirm.eventId
-      };
+      // Calculate statistics
+      const totalRegistrations = eventRegistrations.length;
+      const registeredCount = eventRegistrations.filter(reg => reg.status === 'registered').length;
+      const waitlistedCount = eventRegistrations.filter(reg => reg.status === 'waitlisted').length;
+      const cancelledCount = eventRegistrations.filter(reg => reg.status === 'cancelled').length;
 
-      // Send export email
-      const response = await fetch('/api/export-event', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Calculate total revenue from digital products
+      const totalRevenue = digitalProducts.reduce((sum, product) => sum + (product.price || 0), 0);
+
+      // Send export report via email using Convex mutation
+      const result = await sendEventExportReport({
+        eventId: showExportConfirm.eventId,
+        eventTitle: event.title,
+        eventDate: event.date,
+        eventLocation: event.location,
+        adminEmail: user.emailAddresses[0]?.emailAddress || "",
+        exportData: {
+          totalRegistrations,
+          registeredCount,
+          waitlistedCount,
+          cancelledCount,
+          totalRevenue,
+          digitalProductsCount: digitalProducts.length,
+          passesGenerated: 0, // Will be calculated in the backend
+          passesActive: 0, // Will be calculated in the backend
+          passesUsed: 0, // Will be calculated in the backend
         },
-        body: JSON.stringify(emailData),
       });
 
-      if (response.ok) {
-        setPopup({ 
-          isOpen: true, 
-          title: "Export Successful", 
-          message: "Event data has been sent to your email!", 
-          type: "success", 
-          autoClose: true 
-        });
-      } else {
-        throw new Error('Export failed');
-      }
+      setPopup({ 
+        isOpen: true, 
+        title: "Export Successful", 
+        message: `Event export report has been sent to ${user.emailAddresses[0]?.emailAddress}!`, 
+        type: "success", 
+        autoClose: true 
+      });
     } catch (error) {
       console.error("Error exporting event:", error);
       setPopup({ 

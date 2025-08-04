@@ -15,6 +15,7 @@ import type * as events from "../events.js";
 import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as migrations from "../migrations.js";
+import type * as passes from "../passes.js";
 import type * as payments from "../payments.js";
 import type * as registrations from "../registrations.js";
 import type * as salesAnalytics from "../salesAnalytics.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   files: typeof files;
   http: typeof http;
   migrations: typeof migrations;
+  passes: typeof passes;
   payments: typeof payments;
   registrations: typeof registrations;
   salesAnalytics: typeof salesAnalytics;

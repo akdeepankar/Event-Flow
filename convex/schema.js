@@ -71,6 +71,8 @@ export default defineSchema({
     status: v.union(v.literal("registered"), v.literal("waitlisted"), v.literal("cancelled")),
     waitlistPosition: v.optional(v.number()), // Position in waitlist (1-based)
     registeredAt: v.number(),
+    attendedAt: v.optional(v.number()), // When attendance was marked
+    attendedBy: v.optional(v.string()), // Clerk user ID who marked attendance
   }).index("by_eventId", ["eventId"]).index("by_eventId_status", ["eventId", "status"]),
 
   scheduledEmails: defineTable({
@@ -118,4 +120,17 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   }).index("by_eventId", ["eventId"]).index("by_productId", ["productId"]).index("by_eventId_productId", ["eventId", "productId"]),
+
+  // Event passes table for managing attendee passes
+  passes: defineTable({
+    eventId: v.id("events"),
+    registrationId: v.id("registrations"),
+    passCode: v.string(), // 6-digit alphanumeric code
+    attendeeName: v.string(),
+    attendeeEmail: v.string(),
+    status: v.union(v.literal("active"), v.literal("used"), v.literal("expired")),
+    generatedAt: v.number(),
+    usedAt: v.optional(v.number()),
+    generatedBy: v.string(), // Clerk user ID
+  }).index("by_eventId", ["eventId"]).index("by_registrationId", ["registrationId"]).index("by_passCode", ["passCode"]).index("by_eventId_status", ["eventId", "status"]),
 }); 
