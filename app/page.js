@@ -2,18 +2,27 @@
 
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { api } from "../convex/_generated/api";
 import CreateEventCard from "./components/CreateEventCard";
 import EventList from "./components/EventList";
 import AnalyticsOverview from "./components/AnalyticsOverview";
-import AuthForm from "./components/AuthForm";
 import Navbar from "./components/Navbar";
 import UserProfileSync from "./components/UserProfileSync";
 
 export default function Home() {
   const { user, isLoaded } = useUser();
+  const router = useRouter();
   const events = useQuery(api.events.getAllEvents);
   const registrations = useQuery(api.registrations.getAllRegistrations);
+
+  // Redirect to sign-in if user is not authenticated
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push('/sign-in');
+    }
+  }, [isLoaded, user, router]);
 
   if (!isLoaded) {
     return (
@@ -25,10 +34,8 @@ export default function Home() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-md mx-auto pt-20">
-          <AuthForm />
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
       </div>
     );
   }
